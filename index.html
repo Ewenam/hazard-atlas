@@ -108,6 +108,27 @@
   .zoomctl button{border:1px solid var(--line-strong);background:var(--card);color:var(--ink);
     border-radius:8px;padding:6px 10px;font-size:12px;font-family:inherit;cursor:pointer;box-shadow:var(--shadow)}
   .zoomctl button:hover{border-color:var(--accent);color:var(--accent)}
+  .zoomctl button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .marquee{position:absolute;border:1.5px dashed var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);
+    pointer-events:none;z-index:15}
+  .mapwrap.picking{cursor:crosshair}
+  .mapwrap.picking svg.map{cursor:crosshair}
+
+  .drill{display:flex;gap:6px;margin-bottom:8px}
+  .drill select{flex:1;min-width:0;padding:7px 8px;border:1px solid var(--line-strong);background:var(--card);
+    color:var(--ink);border-radius:8px;font-family:inherit;font-size:12.5px;cursor:pointer}
+  .drill select:disabled{opacity:.5;cursor:default}
+  .drill select:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+  .risklist{padding:2px 8px 12px;display:flex;flex-direction:column;gap:1px}
+  .riskrow{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;font-size:12.5px;cursor:pointer}
+  .riskrow:hover{background:var(--card)}
+  .riskrow.active{background:var(--accent-soft)}
+  .riskrow .rk{font-family:var(--mono);font-size:10.5px;color:var(--faint);width:14px}
+  .riskrow .rnm{flex:1;text-transform:capitalize;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .riskrow .rsrc{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+  .riskrow .rtr{font-size:11px;font-family:var(--mono);width:16px;text-align:center}
+  .riskrow .rv{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--muted);font-size:11.5px;min-width:34px;text-align:right}
   .maptitle{position:absolute;top:12px;left:14px;pointer-events:none}
   .maptitle .t{font-size:15px;font-weight:600;text-transform:capitalize;display:flex;align-items:center;gap:8px}
   .maptitle .t .tag{font-size:10px;font-family:var(--mono);font-weight:700;letter-spacing:.05em;
@@ -282,9 +303,11 @@
         </div>
         <div class="tooltip" id="tip"><div class="tn" id="tip-n"></div><div><span class="tv" id="tip-v"></span> <span class="tsub" id="tip-s"></span></div></div>
         <div class="zoomctl">
-          <button id="zoom-fit" title="Zoom to the selected counties">⌖ Fit selection</button>
+          <button id="marquee-btn" aria-pressed="false" title="Drag a box on the map to select a region">▭ Region</button>
+          <button id="zoom-fit" title="Zoom to the selected counties">⌖ Fit</button>
           <button id="zoom-reset" title="Reset to the full map">Reset</button>
         </div>
+        <div class="marquee" id="marquee" hidden></div>
       </div>
       <div class="timeline">
         <button class="play" id="play" aria-label="Play accumulation from window start" title="Play — accumulate from the window's start year">
@@ -320,8 +343,12 @@
     <aside class="panel">
       <h2>Counties <span id="cty-count"></span></h2>
       <div class="finder">
+        <div class="drill">
+          <select id="state-sel" aria-label="Jump to state"><option value="">State…</option></select>
+          <select id="county-sel" aria-label="Add county" disabled><option value="">County…</option></select>
+        </div>
         <div class="row">
-          <input id="county-search" list="county-list" placeholder="Add a county, e.g. Harris, TX"
+          <input id="county-search" list="county-list" placeholder="…or search: Harris, TX"
                  autocomplete="off" aria-label="Search for a county">
           <button class="clr" id="county-clear" aria-label="Clear all selected counties" title="Clear all">&times;</button>
         </div>
@@ -338,26 +365,28 @@
           </div>
         </div>
       </div>
-      <h2>Through this month</h2>
+      <h2>In this window</h2>
       <div class="kpis">
         <div class="kpi"><div class="v" id="kpi-ev">0</div><div class="k">Events recorded</div></div>
         <div class="kpi"><div class="v" id="kpi-co">0</div><div class="k">Counties affected</div></div>
       </div>
+      <h2 id="risk-title">Top hazards · nationwide</h2>
+      <div class="risklist" id="risklist"></div>
       <h2>Most-affected counties</h2>
       <div class="toplist" id="toplist"></div>
     </aside>
   </div>
 
   <p class="foot">
-    <b>Cumulative</b> counts every event of the selected hazard through the chosen month, so a county
-    darkens at a rate that reflects how often the hazard strikes there. <b>Rolling 12-month</b> shows only
-    the trailing year — surfacing bursts, seasonality, and multi-year trends. Legend breaks adapt to each
-    hazard's own range. Sources: <b>Weather</b> = NOAA Storm Events (county records direct; forecast-zone
-    records mapped to member counties via the NWS zone&#8209;county correlation); <b>Incidents</b> = National
-    Response Center (county name&rarr;FIPS); <b>Disasters</b> = FEMA declarations (per designated county).
-    Coverage 2016&#8211;2023. Offshore records (marine zones, Gulf oil-lease blocks) have no county and are omitted.
-    Select several counties to compare their trend lines; use <b>Include neighbors</b> to fold in each county's
-    1&#8211;3-hop neighbors (higher-order contiguity) and <b>Fit selection</b> to zoom in.
+    Set the <b>time window</b> with the two timeline handles; the map shades each county by events inside it,
+    and legend classes adapt to each hazard's range. Build a <b>region</b> by searching counties, jumping via
+    the <b>State → County</b> menus, or dragging <b>▭ Region</b> across the map — then read its ranked
+    <b>top hazards</b> and per-region trend. Pin a few counties to compare them as lines; grow each by its
+    <b>1&#8211;3-hop neighbors</b>. Sources: <b>Weather</b> = NOAA Storm Events (county records direct;
+    forecast-zone records mapped to member counties via the NWS zone&#8209;county correlation);
+    <b>Incidents</b> = National Response Center (county name&rarr;FIPS); <b>Disasters</b> = FEMA declarations
+    (per designated county). Coverage 2016&#8211;2023; offshore records (marine zones, Gulf oil-lease blocks) omitted.
+    Counts partly reflect reporting density, not hazard alone.
   </p>
 </div>
 
@@ -455,7 +484,9 @@
   // map outline + chip dot + trend line so a county reads the same everywhere.
   const SELPAL=["#f0a020","#e34948","#1baf7a","#8b5cf6","#eb6834","#00b4d8","#e87ba4","#3a9e3a"];
   let colorByFips={};
-  function recolorSelection(){ colorByFips={}; let i=0; selCounties.forEach(f=>{colorByFips[f]=SELPAL[i%SELPAL.length];i++;}); }
+  const COMPARE_MAX=6;                       // >this many pins => treat as one aggregate region
+  function isRegion(){return selCounties.size>COMPARE_MAX;}
+  function recolorSelection(){ colorByFips={}; const region=isRegion(); let i=0; selCounties.forEach(f=>{colorByFips[f]=region?SELPAL[0]:SELPAL[i%SELPAL.length];i++;}); }
   // time window: inclusive month indices [winStart, winEnd]
   let winStart=0, winEnd=DATA.nMonths-1;
   function fmtMonth(mi){const ym=DATA.monthYM[mi];return MON[ym[1]-1]+" "+ym[0];}
@@ -494,6 +525,7 @@
   function render(){
     const counts=counted(); lastCounts=counts;
     updateCountyChips(counts);
+    renderRisk();
     const R=ramp(), Z=zeroColor();
     for(const fips in pathByFips){
       const v=counts[fips]||0, b=bkt(v), fill=b<0?Z:R[b], rec=pathByFips[fips];
@@ -693,7 +725,11 @@
     const rm=e.target.closest("button[data-f]"); if(rm){removeCounty(rm.dataset.f);return;}
     const chip=e.target.closest(".chip[data-f]"); if(chip)zoomTo([...neighborhood(chip.dataset.f)]);
   });
-  svg.addEventListener("click",e=>{if(e.target.tagName==="path"){const f=e.target.getAttribute("data-fips"); selCounties.has(f)?removeCounty(f):addCounty(f);}});
+  let picking=false, suppressClick=false;
+  svg.addEventListener("click",e=>{
+    if(picking||suppressClick){suppressClick=false;return;}
+    if(e.target.tagName==="path"){const f=e.target.getAttribute("data-fips"); selCounties.has(f)?removeCounty(f):addCounty(f);}
+  });
 
   // ---- zoom / viewBox ----
   function setVB(v){svg.setAttribute("viewBox",v[0].toFixed(1)+" "+v[1].toFixed(1)+" "+v[2].toFixed(1)+" "+v[3].toFixed(1));}
@@ -798,9 +834,10 @@
       stat('<span class="'+dcls+'"><span class="arw">'+arw+'</span> '+(pct>=0?"+":"")+Math.round(pct)+'%</span>',"Trend "+S.unit+"-over-"+S.unit)+
       stat(peak.label+" ("+peak.val.toLocaleString()+")","Peak "+S.unit);
 
-    // build chart series: aggregate (0/1 county) or one line per county (2+)
+    // chart mode: compare (2..6 pins → line per county) vs single/region (aggregate bars)
+    const compareMode = selCounties.size>=2 && !isRegion();
     let seriesList, single, chartMax;
-    if(selCounties.size>=2){
+    if(compareMode){
       seriesList=[...selCounties].map(f=>({pts:seriesForScope(neighborhood(f)).pts, color:colorByFips[f], label:shortName(f).split(" ")[0]}));
       single=false;
       chartMax=Math.max(1,...seriesList.flatMap(s=>s.pts.map(p=>p.val)));
@@ -811,7 +848,7 @@
     drawTrendChart(seriesList, fit, chartMax, single);
 
     let extra="";
-    if(selCounties.size>=2){
+    if(compareMode){
       const per=[...selCounties].map(f=>({f,slope:linfit(seriesForScope(neighborhood(f)).pts).slope})).sort((a,b)=>b.slope-a.slope);
       const top=per[0];
       extra=" Steepest rise: <b>"+esc(shortName(top.f))+", "+stateAbbr(top.f.slice(0,2))+"</b> ("+
@@ -819,7 +856,7 @@
     }
     const scopeTxt=scopeLabel();
     const verb = dir==="rise"?"rose":dir==="fall"?"fell":"held roughly steady";
-    const lead = selCounties.size>=2
+    const lead = (selCounties.size>=2)
       ? "Across <b>"+esc(scopeTxt)+"</b>, combined <b>"+esc(t.name)+"</b> events "+verb
       : "<b>"+t.name.replace(/\b\w/g,c=>c.toUpperCase())+"</b> events in <b>"+esc(scopeTxt)+"</b> "+verb;
     document.getElementById("trend-cap").innerHTML=
@@ -878,6 +915,89 @@
     }
     document.getElementById("trend-chart").innerHTML=g;
   }
+
+  // ---- hierarchical State -> County selector ----
+  const STATE_NAME={"01":"Alabama","02":"Alaska","04":"Arizona","05":"Arkansas","06":"California","08":"Colorado","09":"Connecticut","10":"Delaware","11":"District of Columbia","12":"Florida","13":"Georgia","15":"Hawaii","16":"Idaho","17":"Illinois","18":"Indiana","19":"Iowa","20":"Kansas","21":"Kentucky","22":"Louisiana","23":"Maine","24":"Maryland","25":"Massachusetts","26":"Michigan","27":"Minnesota","28":"Mississippi","29":"Missouri","30":"Montana","31":"Nebraska","32":"Nevada","33":"New Hampshire","34":"New Jersey","35":"New Mexico","36":"New York","37":"North Carolina","38":"North Dakota","39":"Ohio","40":"Oklahoma","41":"Oregon","42":"Pennsylvania","44":"Rhode Island","45":"South Carolina","46":"South Dakota","47":"Tennessee","48":"Texas","49":"Utah","50":"Vermont","51":"Virginia","53":"Washington","54":"West Virginia","55":"Wisconsin","56":"Wyoming"};
+  const stateSel=document.getElementById("state-sel"), countySel=document.getElementById("county-sel");
+  const fipsInState={};
+  (function buildStateSelect(){
+    const present={};
+    for(const f in pathByFips){ (fipsInState[f.slice(0,2)]=fipsInState[f.slice(0,2)]||[]).push(f); present[f.slice(0,2)]=1; }
+    Object.keys(present).map(sf=>({sf,n:STATE_NAME[sf]||stateAbbr(sf)})).sort((a,b)=>a.n.localeCompare(b.n))
+      .forEach(o=>{const op=document.createElement("option");op.value=o.sf;op.textContent=o.n;stateSel.appendChild(op);});
+  })();
+  stateSel.addEventListener("change",()=>{
+    const sf=stateSel.value;
+    countySel.innerHTML='<option value="">County…</option>';
+    if(!sf){countySel.disabled=true;return;}
+    (fipsInState[sf]||[]).map(f=>({f,n:nameByFips[f]||f})).sort((a,b)=>a.n.localeCompare(b.n))
+      .forEach(c=>{const op=document.createElement("option");op.value=c.f;op.textContent=c.n;countySel.appendChild(op);});
+    countySel.disabled=false;
+    zoomTo(fipsInState[sf]||[]);
+  });
+  countySel.addEventListener("change",()=>{const f=countySel.value; if(f){addCounty(f); zoomTo([...neighborhood(f)]);}});
+
+  // ---- region marquee (drag a box to select counties) ----
+  const marqueeBtn=document.getElementById("marquee-btn"), marqueeEl=document.getElementById("marquee"), mapWrap=document.getElementById("mapwrap");
+  let dragStart=null;
+  marqueeBtn.addEventListener("click",()=>{picking=!picking;marqueeBtn.setAttribute("aria-pressed",String(picking));mapWrap.classList.toggle("picking",picking);});
+  function clientToSvg(cx,cy){const pt=svg.createSVGPoint();pt.x=cx;pt.y=cy;const m=svg.getScreenCTM();if(!m)return[cx,cy];const p=pt.matrixTransform(m.inverse());return[p.x,p.y];}
+  svg.addEventListener("mousedown",e=>{
+    if(!picking)return; e.preventDefault();
+    const r=mapWrap.getBoundingClientRect();
+    dragStart=[e.clientX,e.clientY,e.clientX-r.left,e.clientY-r.top];
+    marqueeEl.hidden=false; marqueeEl.style.left=dragStart[2]+"px"; marqueeEl.style.top=dragStart[3]+"px"; marqueeEl.style.width="0px"; marqueeEl.style.height="0px";
+  });
+  window.addEventListener("mousemove",e=>{
+    if(!picking||!dragStart)return;
+    const r=mapWrap.getBoundingClientRect(), x0=dragStart[2],y0=dragStart[3],x1=e.clientX-r.left,y1=e.clientY-r.top;
+    marqueeEl.style.left=Math.min(x0,x1)+"px"; marqueeEl.style.top=Math.min(y0,y1)+"px";
+    marqueeEl.style.width=Math.abs(x1-x0)+"px"; marqueeEl.style.height=Math.abs(y1-y0)+"px";
+  });
+  window.addEventListener("mouseup",e=>{
+    if(!picking||!dragStart)return;
+    const [sx,sy]=clientToSvg(dragStart[0],dragStart[1]), [ex,ey]=clientToSvg(e.clientX,e.clientY);
+    dragStart=null; marqueeEl.hidden=true;
+    picking=false; marqueeBtn.setAttribute("aria-pressed","false"); mapWrap.classList.remove("picking");
+    suppressClick=true;                                // swallow the click that follows mouseup
+    if(Math.abs(ex-sx)<3&&Math.abs(ey-sy)<3)return;   // negligible drag = no selection
+    const xmin=Math.min(sx,ex),xmax=Math.max(sx,ex),ymin=Math.min(sy,ey),ymax=Math.max(sy,ey);
+    let added=0;
+    for(const f in bboxByFips){const b=bboxByFips[f], cx=(b[0]+b[2])/2, cy=(b[1]+b[3])/2;
+      if(cx>=xmin&&cx<=xmax&&cy>=ymin&&cy<=ymax&&!selCounties.has(f)){selCounties.add(f);added++;}}
+    if(added){ recolorSelection(); updateHighlights(); render(); renderTrend(); }
+  });
+
+  // ---- top-N hazard "risk profile" for the current region ----
+  function typeSlope(typeId, scopeSet){
+    const recs=DATA.events[typeId]||[], hasScope=scopeSet&&scopeSet.size>0, yrs=winYears();
+    if(yrs.length<2) return 0;
+    const map={}; yrs.forEach(y=>map[y]=0);
+    for(let i=0;i<recs.length;i++){const mi=recs[i][1]; if(mi<winStart||mi>winEnd)continue; if(hasScope&&!scopeSet.has(recs[i][0]))continue; map[monthYear[mi]]+=recs[i][2];}
+    return linfit(yrs.map(y=>({val:map[y]}))).slope;
+  }
+  function renderRisk(){
+    const scope = selCounties.size?unionNeighborhoods():null, hasScope=!!scope;
+    const totals=[];
+    DATA.types.forEach(t=>{
+      const recs=DATA.events[t.id]||[]; let v=0;
+      for(let i=0;i<recs.length;i++){const mi=recs[i][1]; if(mi<winStart||mi>winEnd)continue; if(hasScope&&!scope.has(recs[i][0]))continue; v+=recs[i][2];}
+      if(v>0) totals.push({id:t.id,name:t.name,source:t.source,val:v});
+    });
+    totals.sort((a,b)=>b.val-a.val);
+    const list=totals.slice(0,8);
+    document.getElementById("risk-title").textContent="Top hazards · "+(selCounties.size?scopeLabel():"nationwide");
+    const el=document.getElementById("risklist"); el.innerHTML="";
+    if(!list.length){el.innerHTML='<div class="riskrow" style="color:var(--faint)">No events in this window.</div>';return;}
+    list.forEach((t,i)=>{
+      const sl=typeSlope(t.id,scope), acls=Math.abs(sl)<0.5?"flat":(sl>0?"rise":"fall"), arw=acls==="flat"?"–":(sl>0?"▲":"▼");
+      const row=document.createElement("div"); row.className="riskrow"+(t.id===curType?" active":""); row.dataset.id=t.id;
+      row.innerHTML='<span class="rk">'+(i+1)+'</span><span class="rsrc" style="background:'+cvar(SRC_VAR[t.source])+'"></span>'+
+        '<span class="rnm">'+t.name+'</span><span class="rtr '+acls+'">'+arw+'</span><span class="rv">'+t.val.toLocaleString()+'</span>';
+      el.appendChild(row);
+    });
+  }
+  document.getElementById("risklist").addEventListener("click",e=>{const r=e.target.closest(".riskrow[data-id]"); if(r)selectType(r.dataset.id);});
 
   // ---- about modal ----
   const aboutModal=document.getElementById("about-modal");
