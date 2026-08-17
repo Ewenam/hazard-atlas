@@ -228,6 +228,15 @@
   .tstat .arw{font-size:14px}
   .rise{color:#d03b3b}.fall{color:#0ca30c}.flat{color:var(--muted)}
   #trend-chart{display:block;width:100%;height:auto;overflow:visible}
+  .trendview{margin-left:auto;display:inline-flex;gap:3px}
+  .trendview button{border:1px solid var(--line-strong);background:var(--card);color:var(--muted);
+    border-radius:6px;padding:3px 9px;font-size:11px;font-family:inherit;cursor:pointer;text-transform:none;letter-spacing:0}
+  .trendview button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .rcmp{width:18px;height:18px;flex:0 0 auto;border:1px solid var(--line-strong);background:var(--card);
+    color:var(--muted);border-radius:5px;font-size:11px;line-height:1;cursor:pointer;padding:0}
+  .rcmp:hover{border-color:var(--accent);color:var(--accent)}
+  .rcmp.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .rcmp.ph{border:0;background:none}
   .trend-cap{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.5}
   .trend-cap b{color:var(--ink);font-weight:600}
 
@@ -331,7 +340,12 @@
     </section>
 
     <section class="panel trendcard">
-      <h2>Trend analysis <span id="trend-scope"></span></h2>
+      <h2>Trend analysis <span id="trend-scope"></span>
+        <span class="trendview" role="group" aria-label="Trend view">
+          <button id="tv-time" aria-pressed="true">Over time</button>
+          <button id="tv-season" aria-pressed="false">Seasonality</button>
+        </span>
+      </h2>
       <div class="trend-body">
         <div class="trend-stats" id="trend-stats"></div>
         <svg id="trend-chart" viewBox="0 0 640 200" role="img" aria-label="Trend over time"></svg>
@@ -408,6 +422,9 @@
       <li><b>Focus on places</b> — search a county or click it on the map to pin it. Pin several to compare.
         Use <b>Include neighbors</b> to fold in each county's 1–3 ring of neighboring counties.</li>
       <li><b>Zoom</b> with <b>Fit selection</b>; return with <b>Reset</b>.</li>
+      <li><b>Trend views</b> — switch the chart between <b>Over time</b> (per-year/-month) and
+        <b>Seasonality</b> (which months of the year the hazard clusters in). In the Top-hazards
+        list, tap <b>+</b> on any hazard to overlay it on the trend and <b>compare hazards</b>.</li>
     </ul>
 
     <h3>Reading the fields</h3>
@@ -473,6 +490,8 @@
   let activeSrc={NOAA:true,NRC:true,FEMA:true};
   let curType=DATA.types.filter(t=>t.source==="NOAA").sort((a,b)=>b.total-a.total)[0].id;
   let hop=0;
+  let trendView="time";            // "time" | "season"
+  let cmpTypes=new Set();           // extra hazard types overlaid on the trend
   let playing=false, timer=null;
   let breaks=[1,2,4,7,11,21], lastCounts=null;
   let vb=[0,0,DATA.viewW,DATA.viewH];
@@ -581,7 +600,7 @@
     });
   }
   function selectType(id){
-    curType=id;
+    curType=id; cmpTypes.delete(id);
     [...typesEl.querySelectorAll(".type-btn")].forEach(c=>c.setAttribute("aria-pressed",c.dataset.id===id));
     computeBreaks(); buildLegend(); render(); renderTrend();
   }
@@ -785,8 +804,9 @@
   }
 
   // ---- trend analysis ----
-  function seriesForScope(scopeSet){
-    const recs=DATA.events[curType]||[];
+  function seriesForScope(scopeSet, typeId){
+    typeId=typeId||curType;
+    const recs=DATA.events[typeId]||[];
     const hasScope=scopeSet&&scopeSet.size>0;
     const span=winEnd-winStart+1;
     if(span<=14){
@@ -800,6 +820,14 @@
     for(let i=0;i<recs.length;i+=3){const mi=recs[i+1]; if(mi<winStart||mi>winEnd)continue; const y=monthYear[mi]; const f=FIPSL[recs[i]]; if(hasScope&&!scopeSet.has(f))continue; map[y]+=recs[i+2];}
     return {pts:yrs.map(y=>({label:String(y),val:map[y]})), unit:"year"};
   }
+  function seasonForScope(scopeSet, typeId){
+    typeId=typeId||curType;
+    const recs=DATA.events[typeId]||[], hasScope=scopeSet&&scopeSet.size>0;
+    const arr=new Array(12).fill(0);
+    for(let i=0;i<recs.length;i+=3){const mi=recs[i+1]; if(mi<winStart||mi>winEnd)continue; const f=FIPSL[recs[i]]; if(hasScope&&!scopeSet.has(f))continue; arr[DATA.monthYM[mi][1]-1]+=recs[i+2];}
+    return {pts:arr.map((v,m)=>({label:MON[m],val:v})), unit:"month"};
+  }
+  function seriesOf(scopeSet, typeId){ return trendView==="season" ? seasonForScope(scopeSet,typeId) : seriesForScope(scopeSet,typeId); }
   function shortName(f){return (nameByFips[f]||f).replace(/\b\w/g,c=>c.toUpperCase());}
   function linfit(pts){
     const n=pts.length; if(n<2)return{slope:0,b:n?pts[0].val:0};
@@ -815,62 +843,79 @@
     return selCounties.size+" counties"+k;
   }
   function renderTrend(){
-    const t=typeById[curType], S=seriesForScope(selCounties.size?unionNeighborhoods():null), pts=S.pts, fit=linfit(pts);
+    const t=typeById[curType];
+    const scope = selCounties.size?unionNeighborhoods():null;
+    const season = trendView==="season";
+    const typesMode = cmpTypes.size>0;
+    const S=seriesOf(scope,curType), pts=S.pts, fit=linfit(pts);
     const n=pts.length, total=pts.reduce((a,p)=>a+p.val,0);
-    const avg=n?total/n:0, maxv=Math.max(1,...pts.map(p=>p.val));
+    const avg=n?total/n:0;
     const start=fit.b, end=fit.b+fit.slope*(n-1);
     const pct=start>0?((end-start)/start*100):(end>0?100:0);
     const dir = Math.abs(pct)<10?"flat":(fit.slope>0?"rise":"fall");
     const peak=pts.reduce((a,p)=>p.val>a.val?p:a,pts[0]||{label:"—",val:0});
-    const wy=winYears();
-    const yrRange = wy.length<=1 ? String(wy[0]) : wy[0]+"–"+wy[wy.length-1];
+    const wy=winYears(), yrRange = wy.length<=1?String(wy[0]):wy[0]+"–"+wy[wy.length-1];
+    const unit = season ? "month" : S.unit;
 
-    document.getElementById("trend-scope").textContent=" — "+t.name+" · "+scopeLabel()+" · "+yrRange;
+    document.getElementById("trend-scope").textContent=
+      " — "+(typesMode?(cmpTypes.size+1)+" hazards":t.name)+" · "+scopeLabel()+" · "+(season?"seasonal · ":"")+yrRange;
 
-    const arw = dir==="rise"?"▲":dir==="fall"?"▼":"—";
-    const dcls = dir==="rise"?"rise":dir==="fall"?"fall":"flat";
-    const slopeTxt=(fit.slope>=0?"+":"")+ (Math.abs(fit.slope)>=10?Math.round(fit.slope):fit.slope.toFixed(1)) +"/"+S.unit;
-    document.getElementById("trend-stats").innerHTML=
-      stat(total.toLocaleString(),"Total events")+
-      stat(avg.toFixed(avg<10?1:0),"Avg / "+S.unit)+
-      stat('<span class="'+dcls+'">'+slopeTxt+'</span>',"Linear slope")+
-      stat('<span class="'+dcls+'"><span class="arw">'+arw+'</span> '+(pct>=0?"+":"")+Math.round(pct)+'%</span>',"Trend "+S.unit+"-over-"+S.unit)+
-      stat(peak.label+" ("+peak.val.toLocaleString()+")","Peak "+S.unit);
-
-    // chart mode: compare (2..6 pins → line per county) vs single/region (aggregate bars)
-    const compareMode = selCounties.size>=2 && !isRegion();
-    let seriesList, single, chartMax;
-    if(compareMode){
-      seriesList=[...selCounties].map(f=>({pts:seriesForScope(neighborhood(f)).pts, color:colorByFips[f], label:shortName(f).split(" ")[0]}));
-      single=false;
-      chartMax=Math.max(1,...seriesList.flatMap(s=>s.pts.map(p=>p.val)));
+    const arw=dir==="rise"?"▲":dir==="fall"?"▼":"—", dcls=dir==="rise"?"rise":dir==="fall"?"fall":"flat";
+    const slopeTxt=(fit.slope>=0?"+":"")+(Math.abs(fit.slope)>=10?Math.round(fit.slope):fit.slope.toFixed(1))+"/"+S.unit;
+    let stats=stat(total.toLocaleString(),"Total"+(typesMode?" · "+t.name:""))+stat(avg.toFixed(avg<10?1:0),"Avg / "+unit);
+    if(season){
+      stats+=stat(peak.label,"Peak month")+stat(Math.round(100*peak.val/(total||1))+"%","Share in peak");
     }else{
-      seriesList=[{pts:pts, color:null, label:null}];
-      single=true; chartMax=maxv;
+      stats+=stat('<span class="'+dcls+'">'+slopeTxt+'</span>',"Linear slope")+
+        stat('<span class="'+dcls+'"><span class="arw">'+arw+'</span> '+(pct>=0?"+":"")+Math.round(pct)+'%</span>',"Trend "+S.unit+"-o-"+S.unit)+
+        stat(peak.label+" ("+peak.val.toLocaleString()+")","Peak "+S.unit);
     }
-    drawTrendChart(seriesList, fit, chartMax, single);
+    document.getElementById("trend-stats").innerHTML=stats;
 
-    let extra="";
-    if(compareMode){
-      const per=[...selCounties].map(f=>({f,slope:linfit(seriesForScope(neighborhood(f)).pts).slope})).sort((a,b)=>b.slope-a.slope);
-      const top=per[0];
-      extra=" Steepest rise: <b>"+esc(shortName(top.f))+", "+stateAbbr(top.f.slice(0,2))+"</b> ("+
-        (top.slope>=0?"+":"")+(Math.abs(top.slope)>=10?Math.round(top.slope):top.slope.toFixed(1))+"/"+S.unit+").";
+    const compareCounties = selCounties.size>=2 && !isRegion();
+    let seriesList, single, showTrend=false;
+    if(typesMode){
+      const ids=[curType,...cmpTypes];
+      seriesList=ids.map((id,k)=>({pts:seriesOf(scope,id).pts, color:k===0?cvar("--accent"):SELPAL[(k-1)%SELPAL.length], label:typeById[id].name.split(" ")[0]}));
+      single=false;
+    }else if(compareCounties){
+      seriesList=[...selCounties].map(f=>({pts:seriesOf(neighborhood(f),curType).pts, color:colorByFips[f], label:shortName(f).split(" ")[0]}));
+      single=false;
+    }else{
+      seriesList=[{pts:pts, color:null, label:null}]; single=true; showTrend=!season;
     }
-    const scopeTxt=scopeLabel();
-    const verb = dir==="rise"?"rose":dir==="fall"?"fell":"held roughly steady";
-    const lead = (selCounties.size>=2)
-      ? "Across <b>"+esc(scopeTxt)+"</b>, combined <b>"+esc(t.name)+"</b> events "+verb
-      : "<b>"+t.name.replace(/\b\w/g,c=>c.toUpperCase())+"</b> events in <b>"+esc(scopeTxt)+"</b> "+verb;
-    document.getElementById("trend-cap").innerHTML=
-      lead+" over "+yrRange+" — about "+Math.round(Math.abs(fit.slope)).toLocaleString()+" "+ (Math.abs(fit.slope)===1?"event":"events")+
-      " per "+S.unit+" "+(dir==="flat"?"of change":(dir==="rise"?"increase":"decrease"))+
-      ", "+(pct>=0?"+":"")+Math.round(pct)+"% across the window. Peak "+S.unit+": <b>"+peak.label+"</b>."+extra+
-      (t.source!=="FEMA"?" Note: counts partly reflect reporting density, not hazard alone.":"");
+    const chartMax=Math.max(1,...seriesList.flatMap(s=>s.pts.map(p=>p.val)));
+    drawTrendChart(seriesList, fit, chartMax, single, showTrend);
+
+    let cap;
+    if(season){
+      cap="Seasonality of <b>"+esc(t.name)+"</b> in <b>"+esc(scopeLabel())+"</b>, "+yrRange+
+        " — busiest month is <b>"+peak.label+"</b> ("+Math.round(100*peak.val/(total||1))+"% of events)."+
+        (typesMode?" Comparing "+(cmpTypes.size+1)+" hazards.":"");
+    }else if(typesMode){
+      const verb=dir==="rise"?"rose":dir==="fall"?"fell":"held steady";
+      cap="Comparing <b>"+(cmpTypes.size+1)+" hazards</b> in <b>"+esc(scopeLabel())+"</b> over "+yrRange+
+        " (one line each). <b>"+esc(t.name)+"</b> "+verb+" ~"+(pct>=0?"+":"")+Math.round(pct)+"% across the window.";
+    }else{
+      let extra="";
+      if(compareCounties){
+        const per=[...selCounties].map(f=>({f,slope:linfit(seriesForScope(neighborhood(f),curType).pts).slope})).sort((a,b)=>b.slope-a.slope);
+        const tp=per[0];
+        extra=" Steepest rise: <b>"+esc(shortName(tp.f))+", "+stateAbbr(tp.f.slice(0,2))+"</b> ("+(tp.slope>=0?"+":"")+(Math.abs(tp.slope)>=10?Math.round(tp.slope):tp.slope.toFixed(1))+"/"+S.unit+").";
+      }
+      const verb=dir==="rise"?"rose":dir==="fall"?"fell":"held roughly steady";
+      const lead=(selCounties.size>=2)
+        ? "Across <b>"+esc(scopeLabel())+"</b>, combined <b>"+esc(t.name)+"</b> events "+verb
+        : "<b>"+t.name.replace(/\b\w/g,c=>c.toUpperCase())+"</b> events in <b>"+esc(scopeLabel())+"</b> "+verb;
+      cap=lead+" over "+yrRange+" — about "+Math.round(Math.abs(fit.slope)).toLocaleString()+" "+(Math.abs(fit.slope)===1?"event":"events")+
+        " per "+S.unit+" "+(dir==="flat"?"of change":(dir==="rise"?"increase":"decrease"))+
+        ", "+(pct>=0?"+":"")+Math.round(pct)+"% across the window. Peak "+S.unit+": <b>"+peak.label+"</b>."+extra;
+    }
+    document.getElementById("trend-cap").innerHTML=cap+(t.source!=="FEMA"?" Note: counts partly reflect reporting density, not hazard alone.":"");
   }
   function stat(v,k){return '<div class="tstat"><div class="tv">'+v+'</div><div class="tk">'+k+'</div></div>';}
 
-  function drawTrendChart(seriesList, fit, maxv, single){
+  function drawTrendChart(seriesList, fit, maxv, single, showTrend){
     const W=640,H=200,PADL=42,PADR=single?16:58,PADT=14,PADB=28;
     const iw=W-PADL-PADR, ih=H-PADT-PADB, base=PADT+ih;
     const accent=cvar("--accent"), muted=cvar("--muted"), faint=cvar("--faint"),
@@ -897,8 +942,9 @@
         g+='<rect x="'+bx.toFixed(1)+'" y="'+by.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(0,bh).toFixed(1)+
           '" rx="2" fill="'+(isPeak?ink:accent)+'" opacity="'+(isPeak?0.92:0.82)+'"><title>'+esc(p.label)+': '+p.val.toLocaleString()+'</title></rect>';
       });
-      // dashed linear-fit trend line over the bars
-      g+='<line x1="'+X(0).toFixed(1)+'" y1="'+Y(fit.b).toFixed(1)+'" x2="'+X(n-1).toFixed(1)+'" y2="'+Y(fit.b+fit.slope*(n-1)).toFixed(1)+'" stroke="'+muted+'" stroke-width="1.5" stroke-dasharray="5 4"/>';
+      // dashed linear-fit trend line over the bars (time view only; meaningless for seasonality)
+      if(showTrend)
+        g+='<line x1="'+X(0).toFixed(1)+'" y1="'+Y(fit.b).toFixed(1)+'" x2="'+X(n-1).toFixed(1)+'" y2="'+Y(fit.b+fit.slope*(n-1)).toFixed(1)+'" stroke="'+muted+'" stroke-width="1.5" stroke-dasharray="5 4"/>';
       // value labels on bars (only if not too many)
       if(n<=10) pts0.forEach((p,i)=>{ if(p.val>0)
         g+='<text x="'+X(i).toFixed(1)+'" y="'+(Y(p.val)-4).toFixed(1)+'" text-anchor="middle" font-size="9.5" fill="'+ink+'" font-family="ui-monospace,monospace" font-weight="600">'+p.val.toLocaleString()+'</text>';
@@ -1003,13 +1049,26 @@
     if(!list.length){el.innerHTML='<div class="riskrow" style="color:var(--faint)">No events in this window.</div>';return;}
     list.forEach((t,i)=>{
       const sl=typeSlope(t.id,scope), acls=Math.abs(sl)<0.5?"flat":(sl>0?"rise":"fall"), arw=acls==="flat"?"–":(sl>0?"▲":"▼");
-      const row=document.createElement("div"); row.className="riskrow"+(t.id===curType?" active":""); row.dataset.id=t.id;
+      const isPrimary=t.id===curType, inCmp=cmpTypes.has(t.id);
+      const row=document.createElement("div"); row.className="riskrow"+(isPrimary?" active":""); row.dataset.id=t.id;
+      const cmpBtn = isPrimary ? '<span class="rcmp ph"></span>'
+        : '<button class="rcmp'+(inCmp?" on":"")+'" data-cmp="'+t.id+'" title="'+(inCmp?"Remove from trend comparison":"Add to trend comparison")+'">'+(inCmp?"✓":"+")+'</button>';
       row.innerHTML='<span class="rk">'+(i+1)+'</span><span class="rsrc" style="background:'+cvar(SRC_VAR[t.source])+'"></span>'+
-        '<span class="rnm">'+t.name+'</span><span class="rtr '+acls+'">'+arw+'</span><span class="rv">'+t.val.toLocaleString()+'</span>';
+        '<span class="rnm">'+t.name+'</span><span class="rtr '+acls+'">'+arw+'</span><span class="rv">'+t.val.toLocaleString()+'</span>'+cmpBtn;
       el.appendChild(row);
     });
   }
-  document.getElementById("risklist").addEventListener("click",e=>{const r=e.target.closest(".riskrow[data-id]"); if(r)selectType(r.dataset.id);});
+  document.getElementById("risklist").addEventListener("click",e=>{
+    const cb=e.target.closest("button[data-cmp]");
+    if(cb){ const id=cb.dataset.cmp; cmpTypes.has(id)?cmpTypes.delete(id):cmpTypes.add(id); renderRisk(); renderTrend(); return; }
+    const r=e.target.closest(".riskrow[data-id]"); if(r)selectType(r.dataset.id);
+  });
+
+  // ---- trend view toggle (over time vs seasonality) ----
+  const tvTime=document.getElementById("tv-time"), tvSeason=document.getElementById("tv-season");
+  function setTrendView(v){ trendView=v; tvTime.setAttribute("aria-pressed",v==="time"); tvSeason.setAttribute("aria-pressed",v==="season"); renderTrend(); }
+  tvTime.addEventListener("click",()=>setTrendView("time"));
+  tvSeason.addEventListener("click",()=>setTrendView("season"));
 
   // ---- about modal ----
   const aboutModal=document.getElementById("about-modal");
