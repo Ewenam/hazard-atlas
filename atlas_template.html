@@ -1,0 +1,1031 @@
+<title>U.S. County Hazard Atlas — 2000–present</title>
+<style>
+  :root{
+    --bg:#e9edf1; --panel:#f6f8fb; --card:#ffffff;
+    --ink:#111820; --muted:#5b6673; --faint:#8a95a3;
+    --line:#d3dbe4; --line-strong:#c0cad6;
+    --accent:#2a78d6; --accent-soft:#dbe8fa;
+    --map-line:#c3ccd8; --zero:#e5eaf0; --sea:#eef1f5;
+    --noaa:#2a78d6; --nrc:#eb6834; --fema:#4a3aa7;
+    --ramp0:#cde2fb; --ramp1:#9ec5f4; --ramp2:#6da7ec; --ramp3:#3987e5;
+    --ramp4:#256abf; --ramp5:#184f95; --ramp6:#0d366b;
+    --shadow:0 1px 2px rgba(20,30,45,.06),0 6px 20px rgba(20,30,45,.06);
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0c1016; --panel:#141b24; --card:#19212c;
+      --ink:#e9eef5; --muted:#94a2b3; --faint:#63707f;
+      --line:#25303e; --line-strong:#324156;
+      --accent:#4b9bff; --accent-soft:#183253;
+      --map-line:#2b3746; --zero:#1a2430; --sea:#0f151d;
+      --noaa:#4b9bff; --nrc:#f0824f; --fema:#9085e9;
+      --ramp0:#173250; --ramp1:#1d4b7d; --ramp2:#2568ab; --ramp3:#3987e5;
+      --ramp4:#66a6ef; --ramp5:#98c5f5; --ramp6:#d3e6fc;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#e9edf1; --panel:#f6f8fb; --card:#ffffff; --ink:#111820; --muted:#5b6673;
+    --faint:#8a95a3; --line:#d3dbe4; --line-strong:#c0cad6; --accent:#2a78d6;
+    --accent-soft:#dbe8fa; --map-line:#c3ccd8; --zero:#e5eaf0; --sea:#eef1f5;
+    --noaa:#2a78d6; --nrc:#eb6834; --fema:#4a3aa7;
+    --ramp0:#cde2fb; --ramp1:#9ec5f4; --ramp2:#6da7ec; --ramp3:#3987e5;
+    --ramp4:#256abf; --ramp5:#184f95; --ramp6:#0d366b;
+  }
+  :root[data-theme="dark"]{
+    --bg:#0c1016; --panel:#141b24; --card:#19212c; --ink:#e9eef5; --muted:#94a2b3;
+    --faint:#63707f; --line:#25303e; --line-strong:#324156; --accent:#4b9bff;
+    --accent-soft:#183253; --map-line:#2b3746; --zero:#1a2430; --sea:#0f151d;
+    --noaa:#4b9bff; --nrc:#f0824f; --fema:#9085e9;
+    --ramp0:#173250; --ramp1:#1d4b7d; --ramp2:#2568ab; --ramp3:#3987e5;
+    --ramp4:#66a6ef; --ramp5:#98c5f5; --ramp6:#d3e6fc;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;line-height:1.45}
+  .wrap{max-width:1420px;margin:0 auto;padding:20px clamp(12px,3vw,28px) 40px}
+
+  header.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;
+    padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:18px}
+  header.top h1{font-size:clamp(18px,2.4vw,24px);margin:0;letter-spacing:-.01em;font-weight:650}
+  header.top .sub{color:var(--muted);font-size:13px}
+  header.top .src{margin-left:auto;color:var(--faint);font-size:11.5px;
+    font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em}
+
+  .grid{display:grid;grid-template-columns:262px minmax(0,1fr) 236px;gap:16px;align-items:start}
+  @media (max-width:1080px){.grid{grid-template-columns:1fr}}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+  .panel h2{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);
+    margin:0;padding:13px 14px 9px;font-weight:650;display:flex;justify-content:space-between}
+
+  /* source filter chips */
+  .srcfilter{display:flex;gap:5px;padding:2px 12px 10px}
+  .srcfilter button{flex:1;padding:6px 4px;border:1px solid var(--line-strong);background:var(--card);
+    color:var(--muted);border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:5px}
+  .srcfilter button .dot{width:8px;height:8px;border-radius:50%}
+  .srcfilter button[aria-pressed="true"]{color:var(--ink);border-color:currentColor}
+  .srcfilter button.noaa[aria-pressed="true"]{background:color-mix(in srgb,var(--noaa) 14%,transparent);border-color:var(--noaa)}
+  .srcfilter button.nrc[aria-pressed="true"]{background:color-mix(in srgb,var(--nrc) 14%,transparent);border-color:var(--nrc)}
+  .srcfilter button.fema[aria-pressed="true"]{background:color-mix(in srgb,var(--fema) 14%,transparent);border-color:var(--fema)}
+
+  /* type list */
+  .types{display:flex;flex-direction:column;padding:0 8px 8px;max-height:60vh;overflow-y:auto}
+  .grouphdr{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);
+    padding:10px 8px 4px;font-weight:700;display:flex;align-items:center;gap:6px}
+  .grouphdr .dot{width:8px;height:8px;border-radius:50%}
+  .type-btn{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;
+    border:0;border-radius:8px;padding:7px 8px;cursor:pointer;color:var(--ink);
+    font-family:inherit;font-size:13px;transition:background .12s}
+  .type-btn:hover{background:var(--card)}
+  .type-btn[aria-pressed="true"]{background:var(--accent-soft)}
+  .type-btn .nm{flex:1;text-transform:capitalize;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .type-btn .ct{font-family:var(--mono);font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .type-btn[aria-pressed="true"] .ct{color:var(--accent)}
+
+  .moderow{display:flex;gap:5px;padding:4px 12px 14px}
+  .moderow button{flex:1;padding:7px;border:1px solid var(--line-strong);background:var(--card);
+    color:var(--muted);border-radius:7px;font-family:var(--mono);font-size:10.5px;
+    letter-spacing:.02em;cursor:pointer;text-transform:uppercase}
+  .moderow button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  /* map */
+  .mapcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    box-shadow:var(--shadow);overflow:hidden;position:relative}
+  .mapwrap{position:relative;background:var(--sea)}
+  svg.map{display:block;width:100%;height:auto}
+  svg.map path{stroke:var(--map-line);stroke-width:.28;stroke-linejoin:round;transition:fill .16s ease}
+  svg.map path.hot{stroke:var(--ink);stroke-width:.9}
+  svg.map path.sel{stroke-width:2.4;paint-order:stroke}
+  svg.map path.nbr{paint-order:stroke}
+  @media (prefers-reduced-motion:reduce){svg.map path,.type-btn,.tooltip{transition:none}}
+
+  .zoomctl{position:absolute;right:12px;bottom:12px;display:flex;gap:6px}
+  .zoomctl button{border:1px solid var(--line-strong);background:var(--card);color:var(--ink);
+    border-radius:8px;padding:6px 10px;font-size:12px;font-family:inherit;cursor:pointer;box-shadow:var(--shadow)}
+  .zoomctl button:hover{border-color:var(--accent);color:var(--accent)}
+  .zoomctl button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .marquee{position:absolute;border:1.5px dashed var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);
+    pointer-events:none;z-index:15}
+  .mapwrap.picking{cursor:crosshair}
+  .mapwrap.picking svg.map{cursor:crosshair}
+
+  .drill{display:flex;gap:6px;margin-bottom:8px}
+  .drill select{flex:1;min-width:0;padding:7px 8px;border:1px solid var(--line-strong);background:var(--card);
+    color:var(--ink);border-radius:8px;font-family:inherit;font-size:12.5px;cursor:pointer}
+  .drill select:disabled{opacity:.5;cursor:default}
+  .drill select:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+  .risklist{padding:2px 8px 12px;display:flex;flex-direction:column;gap:1px}
+  .riskrow{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;font-size:12.5px;cursor:pointer}
+  .riskrow:hover{background:var(--card)}
+  .riskrow.active{background:var(--accent-soft)}
+  .riskrow .rk{font-family:var(--mono);font-size:10.5px;color:var(--faint);width:14px}
+  .riskrow .rnm{flex:1;text-transform:capitalize;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .riskrow .rsrc{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+  .riskrow .rtr{font-size:11px;font-family:var(--mono);width:16px;text-align:center}
+  .riskrow .rv{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--muted);font-size:11.5px;min-width:34px;text-align:right}
+  .maptitle{position:absolute;top:12px;left:14px;pointer-events:none}
+  .maptitle .t{font-size:15px;font-weight:600;text-transform:capitalize;display:flex;align-items:center;gap:8px}
+  .maptitle .t .tag{font-size:10px;font-family:var(--mono);font-weight:700;letter-spacing:.05em;
+    padding:2px 6px;border-radius:5px;text-transform:uppercase;color:#fff}
+  .maptitle .d{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:2px}
+
+  .tooltip{position:absolute;pointer-events:none;z-index:20;opacity:0;
+    transform:translate(-50%,calc(-100% - 12px));transition:opacity .1s;background:var(--card);
+    border:1px solid var(--line-strong);border-radius:8px;padding:7px 10px;box-shadow:var(--shadow);
+    white-space:nowrap;font-size:12.5px}
+  .tooltip .tn{font-weight:600}
+  .tooltip .tv{font-family:var(--mono);color:var(--accent);font-variant-numeric:tabular-nums}
+  .tooltip .tsub{color:var(--muted);font-size:11px}
+
+  .timeline{display:flex;align-items:center;gap:14px;padding:14px 16px;border-top:1px solid var(--line)}
+  .play{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:0;cursor:pointer;
+    background:var(--accent);color:#fff;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .play:hover{filter:brightness(1.06)}
+  .play svg{width:16px;height:16px;fill:#fff}
+  .scrub{flex:1;display:flex;flex-direction:column;gap:4px}
+  .scrub .lab{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;
+    color:var(--faint);font-variant-numeric:tabular-nums}
+  .scrub .lab .yr{position:relative;flex:1;text-align:center}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:4px;
+    background:var(--line-strong);outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+    background:var(--accent);border:2px solid var(--card);box-shadow:var(--shadow)}
+  input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--accent);border:2px solid var(--card)}
+  input[type=range]:focus-visible{box-shadow:0 0 0 3px var(--accent-soft)}
+  .datebig{flex:0 0 auto;font-family:var(--mono);font-size:15px;font-weight:600;min-width:96px;
+    text-align:right;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+
+  .legend{padding:12px 14px 14px}
+  .legend .bar{display:flex;height:12px;border-radius:3px;overflow:hidden;margin-bottom:5px}
+  .legend .bar span{flex:1}
+  .legend .ticks{display:flex;font-family:var(--mono);font-size:10px;color:var(--faint);
+    font-variant-numeric:tabular-nums}
+  .legend .ticks span{flex:1;text-align:center}
+  .legend .ticks span:first-child{text-align:left}
+  .legend .ticks span:last-child{text-align:right}
+  .legend .cap{font-size:11px;color:var(--muted);margin-top:8px}
+
+  .kpis{display:flex;flex-direction:column;gap:1px;padding:6px 0}
+  .kpi{padding:8px 14px}
+  .kpi .v{font-family:var(--mono);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .kpi .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .toplist{padding:2px 8px 12px}
+  .toprow{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:7px;font-size:12.5px}
+  .toprow:hover{background:var(--card)}
+  .toprow .rank{font-family:var(--mono);font-size:10.5px;color:var(--faint);width:14px}
+  .toprow .cnm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:capitalize}
+  .toprow .cst{color:var(--faint);font-size:10.5px;font-family:var(--mono)}
+  .toprow .cv{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--accent);font-weight:600}
+  .toprow .minibar{height:4px;border-radius:2px;background:var(--ramp3);flex:0 0 auto}
+
+  .center{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+  /* year chips */
+  .years{display:flex;flex-wrap:wrap;gap:5px;padding:2px 12px 12px}
+  .years button{padding:5px 9px;border:1px solid var(--line-strong);background:var(--card);
+    color:var(--muted);border-radius:7px;font-family:var(--mono);font-size:11.5px;cursor:pointer;
+    font-variant-numeric:tabular-nums}
+  .years button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .mini{border:1px solid var(--line-strong);background:var(--card);color:var(--muted);border-radius:6px;
+    font-size:10px;padding:1px 7px;cursor:pointer;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+  .mini:hover{color:var(--ink)}
+  .panel h2 .mini{margin:-2px 0}
+
+  /* county chips */
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .chip{display:flex;align-items:center;gap:7px;padding:4px 6px 4px 8px;border-radius:8px;
+    background:var(--card);border:1px solid var(--line-strong);font-size:12px}
+  .chip .cdot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .chip{cursor:pointer}
+  .chip .cn{text-transform:capitalize;font-weight:500}
+  .chip .cx{font-family:var(--mono);font-size:10px;color:var(--faint);font-weight:600}
+  .chip .cc{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--muted);font-size:11px}
+  .chip button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0 2px}
+  .chip button:hover{color:var(--ink)}
+  .cty-hint{font-size:11.5px;color:var(--faint);margin-top:9px;line-height:1.5}
+  .hopctl{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+  .hoplbl{font-size:11.5px;color:var(--muted)}
+  .hoplbl .q{display:inline-grid;place-items:center;width:14px;height:14px;border-radius:50%;
+    border:1px solid var(--line-strong);color:var(--faint);font-size:9px;cursor:help}
+  .hopbtns{display:flex;gap:3px}
+  .hopbtns button{width:26px;height:26px;border:1px solid var(--line-strong);background:var(--card);
+    color:var(--muted);border-radius:6px;font-family:var(--mono);font-size:12px;cursor:pointer}
+  .hopbtns button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  /* trend panel */
+  .trendcard h2{align-items:baseline}
+  #trend-scope{font-size:11px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:500}
+  .trend-body{padding:0 14px 16px}
+  .trend-stats{display:flex;flex-wrap:wrap;gap:8px 22px;margin-bottom:12px}
+  .tstat .tv{font-family:var(--mono);font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em;display:flex;align-items:center;gap:5px}
+  .tstat .tk{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .tstat .arw{font-size:14px}
+  .rise{color:#d03b3b}.fall{color:#0ca30c}.flat{color:var(--muted)}
+  #trend-chart{display:block;width:100%;height:auto;overflow:visible}
+  .trend-cap{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.5}
+  .trend-cap b{color:var(--ink);font-weight:600}
+
+  .finder{padding:2px 12px 12px}
+  .finder .row{display:flex;gap:6px}
+  .finder input{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--line-strong);background:var(--card);
+    color:var(--ink);border-radius:8px;font-family:inherit;font-size:13px}
+  .finder input:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .finder .clr{flex:0 0 auto;width:34px;border:1px solid var(--line-strong);background:var(--card);
+    color:var(--muted);border-radius:8px;cursor:pointer;font-size:15px;line-height:1}
+  .finder .clr:hover{color:var(--ink)}
+  .foot{margin-top:16px;color:var(--faint);font-size:11.5px;line-height:1.6}
+  .foot code{font-family:var(--mono);background:var(--panel);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
+  .foot b{color:var(--muted)}
+
+  /* dual-handle range window */
+  .rangewrap{position:relative;height:22px}
+  .rangewrap .rangetrack{position:absolute;top:8px;left:0;right:0;height:6px;border-radius:4px;background:var(--line-strong)}
+  .rangewrap .rangefill{position:absolute;top:0;height:100%;border-radius:4px;background:var(--accent)}
+  .rangewrap input[type=range]{position:absolute;top:0;left:0;width:100%;height:22px;margin:0;background:none;pointer-events:none;-webkit-appearance:none;appearance:none}
+  .rangewrap input[type=range]::-webkit-slider-runnable-track{background:none;border:none}
+  .rangewrap input[type=range]::-moz-range-track{background:none;border:none}
+  .rangewrap input[type=range]::-webkit-slider-thumb{pointer-events:auto;-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);border:2px solid var(--card);box-shadow:var(--shadow);cursor:pointer}
+  .rangewrap input[type=range]::-moz-range-thumb{pointer-events:auto;width:16px;height:16px;border-radius:50%;background:var(--accent);border:2px solid var(--card);cursor:pointer}
+  .rangewrap input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px var(--accent-soft)}
+
+  .about-btn{margin-left:auto;border:1px solid var(--line-strong);background:var(--card);color:var(--muted);
+    border-radius:8px;padding:5px 11px;font-size:12px;font-family:inherit;cursor:pointer;font-weight:600}
+  .about-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+  .modal{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;
+    background:rgba(8,12,18,.55)}
+  .modal[hidden]{display:none}
+  .modal-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+    max-width:640px;width:100%;max-height:86vh;overflow-y:auto;padding:24px 26px;position:relative}
+  .modal-card h2{margin:0 0 4px;font-size:19px}
+  .modal-card h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);margin:18px 0 6px;font-weight:700}
+  .modal-card p,.modal-card li{font-size:13.5px;color:var(--muted);line-height:1.55}
+  .modal-card b{color:var(--ink)}
+  .modal-card ul{margin:6px 0;padding-left:18px}
+  .modal-x{position:absolute;top:14px;right:16px;border:0;background:none;font-size:22px;line-height:1;color:var(--muted);cursor:pointer}
+  .modal-x:hover{color:var(--ink)}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>U.S. County Hazard Atlas</h1>
+    <span class="sub">One hazard at a time across every U.S. county — where it concentrates, and how fast it builds.</span>
+    <button class="about-btn" id="about-btn" aria-haspopup="dialog">? About &amp; help</button>
+    <span class="src" id="src-tag">NOAA · NRC · FEMA</span>
+  </header>
+
+  <div class="grid">
+    <aside class="panel">
+      <h2>Source</h2>
+      <div class="srcfilter" id="srcfilter">
+        <button class="noaa" data-src="NOAA" aria-pressed="true"><span class="dot" style="background:var(--noaa)"></span>Weather</button>
+        <button class="nrc" data-src="NRC" aria-pressed="true"><span class="dot" style="background:var(--nrc)"></span>Incidents</button>
+        <button class="fema" data-src="FEMA" aria-pressed="true"><span class="dot" style="background:var(--fema)"></span>Disasters</button>
+      </div>
+      <h2>Hazard type <span id="type-count"></span></h2>
+      <div class="types" id="types"></div>
+    </aside>
+
+    <div class="center">
+    <section class="mapcard">
+      <div class="mapwrap" id="mapwrap">
+        <svg class="map" id="map" viewBox="0 0 975 610" preserveAspectRatio="xMidYMid meet"
+             role="img" aria-label="County choropleth of the selected hazard"></svg>
+        <div class="maptitle">
+          <div class="t"><span id="mt-type">Thunderstorm Wind</span><span class="tag" id="mt-tag">NOAA</span></div>
+          <div class="d" id="mt-date"></div>
+        </div>
+        <div class="tooltip" id="tip"><div class="tn" id="tip-n"></div><div><span class="tv" id="tip-v"></span> <span class="tsub" id="tip-s"></span></div></div>
+        <div class="zoomctl">
+          <button id="marquee-btn" aria-pressed="false" title="Drag a box on the map to select a region">▭ Region</button>
+          <button id="zoom-fit" title="Zoom to the selected counties">⌖ Fit</button>
+          <button id="zoom-reset" title="Reset to the full map">Reset</button>
+        </div>
+        <div class="marquee" id="marquee" hidden></div>
+      </div>
+      <div class="timeline">
+        <button class="play" id="play" aria-label="Play accumulation from window start" title="Play — accumulate from the window's start year">
+          <svg id="play-ic" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <div class="scrub">
+          <div class="rangewrap">
+            <div class="rangetrack"><div class="rangefill" id="rangefill"></div></div>
+            <input type="range" id="r-start" min="0" max="95" value="0" aria-label="Window start month">
+            <input type="range" id="r-end" min="0" max="95" value="95" aria-label="Window end month">
+          </div>
+          <div class="lab" id="yearlab"></div>
+        </div>
+        <div class="datebig" id="datebig"></div>
+      </div>
+      <div class="legend">
+        <div class="bar" id="legbar"></div>
+        <div class="ticks" id="legticks"></div>
+        <div class="cap" id="legcap">Events per county within the selected time window</div>
+      </div>
+    </section>
+
+    <section class="panel trendcard">
+      <h2>Trend analysis <span id="trend-scope"></span></h2>
+      <div class="trend-body">
+        <div class="trend-stats" id="trend-stats"></div>
+        <svg id="trend-chart" viewBox="0 0 640 200" role="img" aria-label="Trend over time"></svg>
+        <div class="trend-cap" id="trend-cap"></div>
+      </div>
+    </section>
+    </div>
+
+    <aside class="panel">
+      <h2>Counties <span id="cty-count"></span></h2>
+      <div class="finder">
+        <div class="drill">
+          <select id="state-sel" aria-label="Jump to state"><option value="">State…</option></select>
+          <select id="county-sel" aria-label="Add county" disabled><option value="">County…</option></select>
+        </div>
+        <div class="row">
+          <input id="county-search" list="county-list" placeholder="…or search: Harris, TX"
+                 autocomplete="off" aria-label="Search for a county">
+          <button class="clr" id="county-clear" aria-label="Clear all selected counties" title="Clear all">&times;</button>
+        </div>
+        <datalist id="county-list"></datalist>
+        <div class="chips" id="cty-chips"></div>
+        <div class="cty-hint" id="cty-hint">Search, or click counties on the map, to compare and trend them.</div>
+        <div class="hopctl">
+          <span class="hoplbl" title="Include each county's neighbors out to N steps (higher-order contiguity)">Include neighbors &nbsp;<span class="q">?</span></span>
+          <div class="hopbtns" id="hopbtns">
+            <button data-hop="0" aria-pressed="true">0</button>
+            <button data-hop="1" aria-pressed="false">1</button>
+            <button data-hop="2" aria-pressed="false">2</button>
+            <button data-hop="3" aria-pressed="false">3</button>
+          </div>
+        </div>
+      </div>
+      <h2>In this window</h2>
+      <div class="kpis">
+        <div class="kpi"><div class="v" id="kpi-ev">0</div><div class="k">Events recorded</div></div>
+        <div class="kpi"><div class="v" id="kpi-co">0</div><div class="k">Counties affected</div></div>
+      </div>
+      <h2 id="risk-title">Top hazards · nationwide</h2>
+      <div class="risklist" id="risklist"></div>
+      <h2>Most-affected counties</h2>
+      <div class="toplist" id="toplist"></div>
+    </aside>
+  </div>
+
+  <p class="foot">
+    Set the <b>time window</b> with the two timeline handles; the map shades each county by events inside it,
+    and legend classes adapt to each hazard's range. Build a <b>region</b> by searching counties, jumping via
+    the <b>State → County</b> menus, or dragging <b>▭ Region</b> across the map — then read its ranked
+    <b>top hazards</b> and per-region trend. Pin a few counties to compare them as lines; grow each by its
+    <b>1&#8211;3-hop neighbors</b>. Sources: <b>Weather</b> = NOAA Storm Events (county records direct;
+    forecast-zone records mapped to member counties via the NWS zone&#8209;county correlation);
+    <b>Incidents</b> = National Response Center (county name&rarr;FIPS); <b>Disasters</b> = FEMA declarations
+    (per designated county). Coverage from 2000; the current year is partial (reporting lags). Offshore records (marine zones, Gulf oil-lease blocks) omitted.
+    Counts partly reflect reporting density, not hazard alone.
+  </p>
+</div>
+
+<div class="modal" id="about-modal" role="dialog" aria-modal="true" aria-labelledby="about-title" hidden>
+  <div class="modal-card">
+    <button class="modal-x" id="about-close" aria-label="Close">&times;</button>
+    <h2 id="about-title">About the County Hazard Atlas</h2>
+    <p>An interactive map of where U.S. hazard events have been recorded, county by county, from
+      2000 to the present. It unifies three public federal sources so you can see where a hazard concentrates,
+      how its frequency is changing, and compare places.</p>
+
+    <h3>How to use it</h3>
+    <ul>
+      <li><b>Pick a hazard</b> in the left panel (grouped by source: Weather, Incidents, Disasters).
+        The map shades every county by how many times that hazard occurred.</li>
+      <li><b>Set the time window</b> with the two handles on the timeline — a start year and an end year.
+        The map and charts show only events inside that window. Press <b>▶</b> to watch events accumulate
+        from the window's start.</li>
+      <li><b>Focus on places</b> — search a county or click it on the map to pin it. Pin several to compare.
+        Use <b>Include neighbors</b> to fold in each county's 1–3 ring of neighboring counties.</li>
+      <li><b>Zoom</b> with <b>Fit selection</b>; return with <b>Reset</b>.</li>
+    </ul>
+
+    <h3>Reading the fields</h3>
+    <ul>
+      <li><b>Map color</b> — darker = more recorded events in the window. The legend's classes adapt to
+        each hazard's own range, so colors are comparable within a hazard, not across hazards.</li>
+      <li><b>Trend chart</b> — for a single place it's a <b>bar per year</b> (or per month for short windows):
+        the actual counts, so you see real ups and downs. The dashed line is a straight-line fit; the darkest
+        bar is the peak. Pin two or more places and it becomes one <b>line per place</b> for comparison.</li>
+      <li><b>Slope / trend %</b> — the average change per year and the net change across the window. Rising
+        (red) vs. falling (green) describes the counts, not a forecast.</li>
+    </ul>
+
+    <h3>Important caveats</h3>
+    <ul>
+      <li>Counts partly reflect <b>reporting</b>, not hazard alone — more people, detectors, or industry can
+        mean more recorded events. Rising counts can come from real change, better reporting, or growth in
+        what's exposed (e.g., new industrial build-out). Interpret with care.</li>
+      <li>Offshore records (marine zones, Gulf oil-lease blocks) have no county and are omitted.</li>
+    </ul>
+
+    <h3>Sources</h3>
+    <p><b>Weather</b> = NOAA Storm Events · <b>Incidents</b> = National Response Center · <b>Disasters</b> =
+      FEMA declarations. A research tool, not official guidance.</p>
+  </div>
+</div>
+
+<script id="viz-data" type="application/json">/*__DATA__*/</script>
+<script>
+(function(){
+  "use strict";
+  const DATA=JSON.parse(document.getElementById("viz-data").textContent);
+  const FIPSL=DATA.fipsList||[];   // event records store FIPS as an index into this list
+  const RAMP_VARS=["--ramp0","--ramp1","--ramp2","--ramp3","--ramp4","--ramp5","--ramp6"];
+  const SRC_ORDER={NOAA:0,NRC:1,FEMA:2};
+  const SRC_LABEL={NOAA:"Weather (NOAA)",NRC:"Incidents (NRC)",FEMA:"Disasters (FEMA)"};
+  const SRC_VAR={NOAA:"--noaa",NRC:"--nrc",FEMA:"--fema"};
+  const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const root=document.documentElement;
+  const cvar=n=>getComputedStyle(root).getPropertyValue(n).trim();
+  const ramp=()=>RAMP_VARS.map(cvar);
+  const zeroColor=()=>cvar("--zero");
+
+  // ---- build map paths ----
+  const svg=document.getElementById("map"), SVGNS="http://www.w3.org/2000/svg";
+  const pathByFips={}, nameByFips={}, bboxByFips={};
+  const frag=document.createDocumentFragment();
+  for(const fips in DATA.counties){
+    const c=DATA.counties[fips]; nameByFips[fips]=c.n;
+    const p=document.createElementNS(SVGNS,"path");
+    p.setAttribute("d",c.d); p.setAttribute("data-fips",fips);
+    frag.appendChild(p); pathByFips[fips]={el:p,lastFill:null};
+    const nums=c.d.match(/-?\d+\.?\d*/g)||[];
+    let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    for(let i=0;i+1<nums.length;i+=2){const x=+nums[i],y=+nums[i+1]; if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y;}
+    bboxByFips[fips]=[x0,y0,x1,y1];
+  }
+  svg.appendChild(frag);
+  const ADJ=DATA.adj||{};
+
+  // ---- state ----
+  const typeById={}; DATA.types.forEach(t=>typeById[t.id]=t);
+  let activeSrc={NOAA:true,NRC:true,FEMA:true};
+  let curType=DATA.types.filter(t=>t.source==="NOAA").sort((a,b)=>b.total-a.total)[0].id;
+  let hop=0;
+  let playing=false, timer=null;
+  let breaks=[1,2,4,7,11,21], lastCounts=null;
+  let vb=[0,0,DATA.viewW,DATA.viewH];
+
+  const Y0=DATA.years[0], Y1=DATA.years[1];
+  const ALL_YEARS=[]; for(let y=Y0;y<=Y1;y++) ALL_YEARS.push(y);
+  const monthYear=DATA.monthYM.map(x=>x[0]);
+  let selCounties=new Set();
+  // high-contrast selection palette (avoids the blue choropleth hue); shared by
+  // map outline + chip dot + trend line so a county reads the same everywhere.
+  const SELPAL=["#f0a020","#e34948","#1baf7a","#8b5cf6","#eb6834","#00b4d8","#e87ba4","#3a9e3a"];
+  let colorByFips={};
+  const COMPARE_MAX=6;                       // >this many pins => treat as one aggregate region
+  function isRegion(){return selCounties.size>COMPARE_MAX;}
+  function recolorSelection(){ colorByFips={}; const region=isRegion(); let i=0; selCounties.forEach(f=>{colorByFips[f]=region?SELPAL[0]:SELPAL[i%SELPAL.length];i++;}); }
+  // time window: inclusive month indices [winStart, winEnd]
+  let winStart=0, winEnd=DATA.nMonths-1;
+  function fmtMonth(mi){const ym=DATA.monthYM[mi];return MON[ym[1]-1]+" "+ym[0];}
+  function winYears(){const a=[],s=new Set();for(let mi=winStart;mi<=winEnd;mi++){const y=monthYear[mi];if(!s.has(y)){s.add(y);a.push(y);}}return a;}
+  function winLabel(){return fmtMonth(winStart)+" – "+fmtMonth(winEnd);}
+
+  // ---- adaptive legend breaks from full-period totals of current type ----
+  function computeBreaks(){
+    const recs=DATA.events[curType]||[];
+    const tot=Object.create(null);
+    for(let i=0;i<recs.length;i+=3){const mi=recs[i+1]; if(mi>=winStart&&mi<=winEnd){const f=FIPSL[recs[i]]; tot[f]=(tot[f]||0)+recs[i+2];}}
+    const vals=Object.values(tot).filter(v=>v>0).sort((a,b)=>a-b);
+    if(!vals.length){breaks=[1,2,3,4,5,6];return;}
+    const q=p=>vals[Math.min(vals.length-1,Math.floor(p*vals.length))];
+    let b=[q(.30),q(.52),q(.68),q(.81),q(.91),q(.975)].map(v=>Math.max(1,Math.round(v)));
+    // enforce strictly increasing
+    for(let i=1;i<b.length;i++) if(b[i]<=b[i-1]) b[i]=b[i-1]+1;
+    breaks=b;
+  }
+  function bkt(v){
+    if(v<=0)return -1;
+    for(let i=0;i<breaks.length;i++) if(v<breaks[i]) return i;
+    return breaks.length; // = 6 -> ramp[6]
+  }
+
+  function counted(){
+    const counts=Object.create(null);
+    const recs=DATA.events[curType]||[];
+    for(let i=0;i<recs.length;i+=3){
+      const mi=recs[i+1];
+      if(mi>=winStart && mi<=winEnd){ const f=FIPSL[recs[i]]; counts[f]=(counts[f]||0)+recs[i+2]; }
+    }
+    return counts;
+  }
+
+  function render(){
+    const counts=counted(); lastCounts=counts;
+    updateCountyChips(counts);
+    renderRisk();
+    const R=ramp(), Z=zeroColor();
+    for(const fips in pathByFips){
+      const v=counts[fips]||0, b=bkt(v), fill=b<0?Z:R[b], rec=pathByFips[fips];
+      if(rec.lastFill!==fill){ rec.el.setAttribute("fill",fill); rec.lastFill=fill; }
+    }
+    let totalEv=0, affected=0;
+    for(const f in counts){ totalEv+=counts[f]; affected++; }
+    document.getElementById("kpi-ev").textContent=totalEv.toLocaleString();
+    document.getElementById("kpi-co").textContent=affected.toLocaleString();
+    const t=typeById[curType];
+    document.getElementById("mt-type").textContent=t.name;
+    const tag=document.getElementById("mt-tag");
+    tag.textContent=t.source; tag.style.background=cvar(SRC_VAR[t.source]);
+    document.getElementById("mt-date").textContent="events, "+winLabel();
+    const wy=winYears();
+    document.getElementById("datebig").textContent=wy.length<=1?String(wy[0]):(wy[0]+"–"+wy[wy.length-1]);
+    // top counties
+    const top=Object.keys(counts).map(f=>[f,counts[f]]).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    const maxv=top.length?top[0][1]:1, tl=document.getElementById("toplist"); tl.innerHTML="";
+    if(!top.length){tl.innerHTML='<div class="toprow" style="color:var(--faint)">No events yet in this window.</div>';return;}
+    top.forEach(([f,v],i)=>{
+      const row=document.createElement("div"); row.className="toprow";
+      row.innerHTML='<span class="rank">'+(i+1)+'</span><span class="cnm">'+
+        esc((nameByFips[f]||f).toLowerCase())+'</span><span class="cst">'+stateAbbr(f.slice(0,2))+
+        '</span><span class="minibar" style="width:'+(6+34*v/maxv)+'px"></span><span class="cv">'+v.toLocaleString()+'</span>';
+      tl.appendChild(row);
+    });
+  }
+  const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+  // ---- type list (grouped by source, filtered) ----
+  const typesEl=document.getElementById("types");
+  function buildTypeList(){
+    typesEl.innerHTML="";
+    const shown=DATA.types.filter(t=>activeSrc[t.source])
+      .sort((a,b)=> SRC_ORDER[a.source]-SRC_ORDER[b.source] || b.total-a.total);
+    document.getElementById("type-count").textContent=shown.length;
+    let curSrc=null;
+    shown.forEach(t=>{
+      if(t.source!==curSrc){
+        curSrc=t.source;
+        const h=document.createElement("div"); h.className="grouphdr";
+        h.innerHTML='<span class="dot" style="background:'+cvar(SRC_VAR[t.source])+'"></span>'+SRC_LABEL[t.source];
+        typesEl.appendChild(h);
+      }
+      const b=document.createElement("button");
+      b.className="type-btn"; b.dataset.id=t.id;
+      b.setAttribute("aria-pressed",t.id===curType);
+      b.innerHTML='<span class="nm">'+t.name+'</span><span class="ct">'+t.total.toLocaleString()+'</span>';
+      b.addEventListener("click",()=>selectType(t.id));
+      typesEl.appendChild(b);
+    });
+  }
+  function selectType(id){
+    curType=id;
+    [...typesEl.querySelectorAll(".type-btn")].forEach(c=>c.setAttribute("aria-pressed",c.dataset.id===id));
+    computeBreaks(); buildLegend(); render(); renderTrend();
+  }
+
+  // ---- source filter ----
+  document.getElementById("srcfilter").addEventListener("click",e=>{
+    const btn=e.target.closest("button"); if(!btn)return;
+    const s=btn.dataset.src;
+    const on=btn.getAttribute("aria-pressed")==="true";
+    // keep at least one source on
+    if(on && Object.values(activeSrc).filter(Boolean).length===1) return;
+    activeSrc[s]=!on; btn.setAttribute("aria-pressed",String(!on));
+    buildTypeList();
+    if(!activeSrc[typeById[curType].source]){
+      const first=DATA.types.filter(t=>activeSrc[t.source]).sort((a,b)=>SRC_ORDER[a.source]-SRC_ORDER[b.source]||b.total-a.total)[0];
+      selectType(first.id);
+    }
+  });
+
+  // ---- time window: dual-handle range + play ----
+  const rStart=document.getElementById("r-start"), rEnd=document.getElementById("r-end"), rangeFill=document.getElementById("rangefill");
+  rStart.max=DATA.nMonths-1; rEnd.max=DATA.nMonths-1; rStart.value=0; rEnd.value=DATA.nMonths-1;
+  function updateFill(){
+    const span=DATA.nMonths-1, a=winStart/span*100, b=winEnd/span*100;
+    rangeFill.style.left=a+"%"; rangeFill.style.width=(b-a)+"%";
+  }
+  function onRange(){
+    let a=+rStart.value, b=+rEnd.value;
+    if(a>b){ if(document.activeElement===rStart){b=a;rEnd.value=b;} else {a=b;rStart.value=a;} }
+    winStart=a; winEnd=b; updateFill();
+    computeBreaks(); buildLegend(); render(); renderTrend();
+  }
+  rStart.addEventListener("input",onRange);
+  rEnd.addEventListener("input",onRange);
+
+  const playBtn=document.getElementById("play"), playIc=document.getElementById("play-ic");
+  function setPlay(on){
+    playing=on;
+    playIc.innerHTML=on?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M8 5v14l11-7z"/>';
+    playBtn.setAttribute("aria-label",on?"Pause accumulation":"Play accumulation from window start");
+    if(on){
+      const last=DATA.nMonths-1;
+      if(winEnd>=last) winEnd=winStart;                 // replay from the window's start
+      const saved=winEnd; winEnd=last; computeBreaks(); buildLegend(); winEnd=saved; // stable color scale
+      rEnd.value=winEnd; updateFill();
+      timer=setInterval(()=>{
+        winEnd+=1; if(winEnd>=last){winEnd=last;setPlay(false);}
+        rEnd.value=winEnd; updateFill(); render(); renderTrend();
+      },150);
+    } else if(timer){clearInterval(timer);timer=null;}
+  }
+  playBtn.addEventListener("click",()=>setPlay(!playing));
+
+  // ---- year ticks under slider ----
+  function buildYearLab(){
+    const el=document.getElementById("yearlab"); el.innerHTML="";
+    const y0=DATA.years[0], y1=DATA.years[1], span=y1-y0;
+    const step = span>22?5:(span>12?2:1);
+    for(let y=y0;y<=y1;y++){const s=document.createElement("span");s.className="yr";
+      s.textContent=((y-y0)%step===0||y===y1)?"’"+String(y).slice(2):"";el.appendChild(s);}
+  }
+
+  // ---- tooltip ----
+  const tip=document.getElementById("tip"),tipN=document.getElementById("tip-n"),
+        tipV=document.getElementById("tip-v"),tipS=document.getElementById("tip-s"),
+        wrap=document.getElementById("mapwrap"); let hotEl=null;
+  svg.addEventListener("mousemove",e=>{
+    const t=e.target;
+    if(t.tagName==="path"){
+      const f=t.getAttribute("data-fips"), v=lastCounts?(lastCounts[f]||0):0;
+      if(hotEl&&hotEl!==t)hotEl.classList.remove("hot");
+      t.classList.add("hot"); hotEl=t;
+      tipN.textContent=(nameByFips[f]||f).replace(/\b\w/g,c=>c.toUpperCase())+" County";
+      tipV.textContent=v.toLocaleString(); tipS.textContent=(v===1?"event":"events")+" · "+stateAbbr(f.slice(0,2));
+      const r=wrap.getBoundingClientRect();
+      tip.style.left=(e.clientX-r.left)+"px"; tip.style.top=(e.clientY-r.top)+"px"; tip.style.opacity=1;
+    }
+  });
+  svg.addEventListener("mouseleave",()=>{tip.style.opacity=0;if(hotEl){hotEl.classList.remove("hot");hotEl=null;}});
+
+  // ---- legend ----
+  function buildLegend(){
+    const R=ramp(),Z=zeroColor();
+    const bar=document.getElementById("legbar"); bar.innerHTML="";
+    [Z].concat(R).forEach(c=>{const s=document.createElement("span");s.style.background=c;bar.appendChild(s);});
+    const ticks=document.getElementById("legticks"); ticks.innerHTML="";
+    const labs=["0"].concat(breaks.map(v=>v.toLocaleString())).concat([breaks[breaks.length-1].toLocaleString()+"+"]);
+    labs.forEach(l=>{const s=document.createElement("span");s.textContent=l;ticks.appendChild(s);});
+  }
+
+  const STFIPS={"01":"AL","02":"AK","04":"AZ","05":"AR","06":"CA","08":"CO","09":"CT","10":"DE","11":"DC","12":"FL","13":"GA","15":"HI","16":"ID","17":"IL","18":"IN","19":"IA","20":"KS","21":"KY","22":"LA","23":"ME","24":"MD","25":"MA","26":"MI","27":"MN","28":"MS","29":"MO","30":"MT","31":"NE","32":"NV","33":"NH","34":"NJ","35":"NM","36":"NY","37":"NC","38":"ND","39":"OH","40":"OK","41":"OR","42":"PA","44":"RI","45":"SC","46":"SD","47":"TN","48":"TX","49":"UT","50":"VT","51":"VA","53":"WA","54":"WV","55":"WI","56":"WY"};
+  const stateAbbr=fp=>STFIPS[fp]||fp;
+
+  // ---- county finder (multi-select) ----
+  const searchInput=document.getElementById("county-search");
+  const dl=document.getElementById("county-list");
+  const labelByLower={};   // "harris, tx" -> fips
+  (function buildCountyList(){
+    const opts=[];
+    for(const fips in pathByFips){
+      const label=(nameByFips[fips]||fips)+", "+stateAbbr(fips.slice(0,2));
+      labelByLower[label.toLowerCase()]=fips;
+      opts.push('<option value="'+esc(label)+'"></option>');
+    }
+    dl.innerHTML=opts.sort().join("");
+  })();
+  function resolveCounty(v){
+    v=(v||"").trim().toLowerCase(); if(!v) return null;
+    if(labelByLower[v]) return labelByLower[v];
+    let starts=null, contains=null;
+    for(const lab in labelByLower){
+      if(lab.startsWith(v)){ starts=labelByLower[lab]; break; }
+      if(!contains && lab.split(",")[0].includes(v)) contains=labelByLower[lab];
+    }
+    return starts||contains;
+  }
+  function addCounty(f){ if(!f||selCounties.has(f))return; selCounties.add(f); refreshSelection(); }
+  function removeCounty(f){ if(selCounties.delete(f)) refreshSelection(); }
+  function clearCounties(){ if(selCounties.size){ selCounties.clear(); refreshSelection(); } }
+  function neighborhood(seed){
+    if(hop<=0) return new Set([seed]);
+    const seen=new Set([seed]); let frontier=[seed];
+    for(let k=0;k<hop;k++){ const nxt=[];
+      frontier.forEach(f=>{(ADJ[f]||[]).forEach(nb=>{if(!seen.has(nb)){seen.add(nb);nxt.push(nb);}});});
+      frontier=nxt;
+    }
+    return seen;
+  }
+  function unionNeighborhoods(){const u=new Set(); selCounties.forEach(s=>neighborhood(s).forEach(f=>u.add(f))); return u;}
+  function refreshSelection(){ recolorSelection(); updateHighlights(); render(); renderTrend(); }
+  function updateHighlights(){
+    for(const f in pathByFips){const el=pathByFips[f].el; el.classList.remove("sel","nbr"); el.style.stroke=""; el.style.strokeOpacity=""; el.style.strokeWidth="";}
+    if(hop>0) selCounties.forEach(s=>{const col=colorByFips[s]; neighborhood(s).forEach(f=>{
+      if(selCounties.has(f))return; const p=pathByFips[f]; if(!p)return;
+      p.el.classList.add("nbr"); p.el.style.stroke=col; p.el.style.strokeOpacity="0.5"; p.el.style.strokeWidth="1.1"; svg.appendChild(p.el);
+    });});
+    selCounties.forEach(f=>{const p=pathByFips[f]; if(p){p.el.classList.add("sel"); p.el.style.stroke=colorByFips[f]; svg.appendChild(p.el);}});
+  }
+  function searchAdd(){const f=resolveCounty(searchInput.value); if(f){addCounty(f); searchInput.value=""; zoomTo([...neighborhood(f)]);}}
+  searchInput.addEventListener("change",searchAdd);
+  searchInput.addEventListener("keydown",e=>{if(e.key==="Enter")searchAdd();});
+  document.getElementById("county-clear").addEventListener("click",()=>{clearCounties();resetView();});
+  document.getElementById("cty-chips").addEventListener("click",e=>{
+    const rm=e.target.closest("button[data-f]"); if(rm){removeCounty(rm.dataset.f);return;}
+    const chip=e.target.closest(".chip[data-f]"); if(chip)zoomTo([...neighborhood(chip.dataset.f)]);
+  });
+  let picking=false, suppressClick=false;
+  svg.addEventListener("click",e=>{
+    if(picking||suppressClick){suppressClick=false;return;}
+    if(e.target.tagName==="path"){const f=e.target.getAttribute("data-fips"); selCounties.has(f)?removeCounty(f):addCounty(f);}
+  });
+
+  // ---- zoom / viewBox ----
+  function setVB(v){svg.setAttribute("viewBox",v[0].toFixed(1)+" "+v[1].toFixed(1)+" "+v[2].toFixed(1)+" "+v[3].toFixed(1));}
+  let vbAnim=null;
+  function tweenVB(target){
+    if(vbAnim)cancelAnimationFrame(vbAnim);
+    if(window.matchMedia("(prefers-reduced-motion:reduce)").matches){vb=target.slice();setVB(vb);return;}
+    const start=vb.slice(), t0=performance.now(), dur=460;
+    (function step(now){
+      const k=Math.min(1,(now-t0)/dur), e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+      vb=start.map((s,i)=>s+(target[i]-s)*e); setVB(vb);
+      if(k<1) vbAnim=requestAnimationFrame(step); else {vb=target.slice(); vbAnim=null;}
+    })(performance.now());
+  }
+  function fitBox(list){
+    let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    list.forEach(f=>{const b=bboxByFips[f]; if(!b)return; x0=Math.min(x0,b[0]);y0=Math.min(y0,b[1]);x1=Math.max(x1,b[2]);y1=Math.max(y1,b[3]);});
+    if(x1<x0)return null;
+    let cx=(x0+x1)/2, cy=(y0+y1)/2, w=(x1-x0)*1.7, h=(y1-y0)*1.7;
+    const ar=DATA.viewW/DATA.viewH;
+    if(w/h<ar) w=h*ar; else h=w/ar;
+    const minw=DATA.viewW*0.12; if(w<minw){w=minw;h=w/ar;}
+    return [cx-w/2, cy-h/2, w, h];
+  }
+  function zoomTo(list){const b=fitBox(list); if(b)tweenVB(b);}
+  function resetView(){tweenVB([0,0,DATA.viewW,DATA.viewH]);}
+  document.getElementById("zoom-reset").addEventListener("click",resetView);
+  document.getElementById("zoom-fit").addEventListener("click",()=>{if(selCounties.size)zoomTo([...unionNeighborhoods()]);});
+
+  // ---- neighbor hop control (higher-order contiguity) ----
+  document.getElementById("hopbtns").addEventListener("click",e=>{
+    const b=e.target.closest("button[data-hop]"); if(!b)return;
+    hop=+b.dataset.hop;
+    [...document.getElementById("hopbtns").children].forEach(c=>c.setAttribute("aria-pressed",+c.dataset.hop===hop));
+    updateHighlights(); render(); renderTrend();
+  });
+
+  function updateCountyChips(counts){
+    document.getElementById("cty-count").textContent=selCounties.size?("· "+selCounties.size):"";
+    document.getElementById("cty-hint").style.display=selCounties.size?"none":"block";
+    const wrap=document.getElementById("cty-chips"); wrap.innerHTML="";
+    selCounties.forEach(f=>{
+      const v=counts?(counts[f]||0):0, chip=document.createElement("div"); chip.className="chip"; chip.dataset.f=f;
+      const nb = hop>0 ? ' <span class="cx">+'+(neighborhood(f).size-1)+'</span>' : '';
+      chip.innerHTML='<span class="cdot" style="background:'+colorByFips[f]+'"></span><span class="cn">'+
+        esc((nameByFips[f]||f).toLowerCase())+', '+stateAbbr(f.slice(0,2))+nb+
+        '</span><span class="cc">'+v.toLocaleString()+'</span><button aria-label="Remove county" data-f="'+f+'">&times;</button>';
+      wrap.appendChild(chip);
+    });
+  }
+
+  // ---- trend analysis ----
+  function seriesForScope(scopeSet){
+    const recs=DATA.events[curType]||[];
+    const hasScope=scopeSet&&scopeSet.size>0;
+    const span=winEnd-winStart+1;
+    if(span<=14){
+      // monthly bars across the window
+      const idx={}; const pts=[];
+      for(let mi=winStart;mi<=winEnd;mi++){ idx[mi]=pts.length; pts.push({label:MON[DATA.monthYM[mi][1]-1]+" '"+String(DATA.monthYM[mi][0]).slice(2), val:0}); }
+      for(let i=0;i<recs.length;i+=3){const mi=recs[i+1]; if(mi<winStart||mi>winEnd)continue; const f=FIPSL[recs[i]]; if(hasScope&&!scopeSet.has(f))continue; pts[idx[mi]].val+=recs[i+2];}
+      return {pts, unit:"month"};
+    }
+    const yrs=winYears(), map={}; yrs.forEach(y=>map[y]=0);
+    for(let i=0;i<recs.length;i+=3){const mi=recs[i+1]; if(mi<winStart||mi>winEnd)continue; const y=monthYear[mi]; const f=FIPSL[recs[i]]; if(hasScope&&!scopeSet.has(f))continue; map[y]+=recs[i+2];}
+    return {pts:yrs.map(y=>({label:String(y),val:map[y]})), unit:"year"};
+  }
+  function shortName(f){return (nameByFips[f]||f).replace(/\b\w/g,c=>c.toUpperCase());}
+  function linfit(pts){
+    const n=pts.length; if(n<2)return{slope:0,b:n?pts[0].val:0};
+    let sx=0,sy=0,sxx=0,sxy=0;
+    pts.forEach((p,i)=>{sx+=i;sy+=p.val;sxx+=i*i;sxy+=i*p.val;});
+    const d=n*sxx-sx*sx, slope=d?(n*sxy-sx*sy)/d:0;
+    return {slope, b:(sy-slope*sx)/n};
+  }
+  function scopeLabel(){
+    const k = hop>0 ? " +"+hop+"-hop" : "";
+    if(selCounties.size===0) return "all U.S. counties";
+    if(selCounties.size===1){const f=[...selCounties][0];return (nameByFips[f]||f).replace(/\b\w/g,c=>c.toUpperCase())+" County, "+stateAbbr(f.slice(0,2))+k;}
+    return selCounties.size+" counties"+k;
+  }
+  function renderTrend(){
+    const t=typeById[curType], S=seriesForScope(selCounties.size?unionNeighborhoods():null), pts=S.pts, fit=linfit(pts);
+    const n=pts.length, total=pts.reduce((a,p)=>a+p.val,0);
+    const avg=n?total/n:0, maxv=Math.max(1,...pts.map(p=>p.val));
+    const start=fit.b, end=fit.b+fit.slope*(n-1);
+    const pct=start>0?((end-start)/start*100):(end>0?100:0);
+    const dir = Math.abs(pct)<10?"flat":(fit.slope>0?"rise":"fall");
+    const peak=pts.reduce((a,p)=>p.val>a.val?p:a,pts[0]||{label:"—",val:0});
+    const wy=winYears();
+    const yrRange = wy.length<=1 ? String(wy[0]) : wy[0]+"–"+wy[wy.length-1];
+
+    document.getElementById("trend-scope").textContent=" — "+t.name+" · "+scopeLabel()+" · "+yrRange;
+
+    const arw = dir==="rise"?"▲":dir==="fall"?"▼":"—";
+    const dcls = dir==="rise"?"rise":dir==="fall"?"fall":"flat";
+    const slopeTxt=(fit.slope>=0?"+":"")+ (Math.abs(fit.slope)>=10?Math.round(fit.slope):fit.slope.toFixed(1)) +"/"+S.unit;
+    document.getElementById("trend-stats").innerHTML=
+      stat(total.toLocaleString(),"Total events")+
+      stat(avg.toFixed(avg<10?1:0),"Avg / "+S.unit)+
+      stat('<span class="'+dcls+'">'+slopeTxt+'</span>',"Linear slope")+
+      stat('<span class="'+dcls+'"><span class="arw">'+arw+'</span> '+(pct>=0?"+":"")+Math.round(pct)+'%</span>',"Trend "+S.unit+"-over-"+S.unit)+
+      stat(peak.label+" ("+peak.val.toLocaleString()+")","Peak "+S.unit);
+
+    // chart mode: compare (2..6 pins → line per county) vs single/region (aggregate bars)
+    const compareMode = selCounties.size>=2 && !isRegion();
+    let seriesList, single, chartMax;
+    if(compareMode){
+      seriesList=[...selCounties].map(f=>({pts:seriesForScope(neighborhood(f)).pts, color:colorByFips[f], label:shortName(f).split(" ")[0]}));
+      single=false;
+      chartMax=Math.max(1,...seriesList.flatMap(s=>s.pts.map(p=>p.val)));
+    }else{
+      seriesList=[{pts:pts, color:null, label:null}];
+      single=true; chartMax=maxv;
+    }
+    drawTrendChart(seriesList, fit, chartMax, single);
+
+    let extra="";
+    if(compareMode){
+      const per=[...selCounties].map(f=>({f,slope:linfit(seriesForScope(neighborhood(f)).pts).slope})).sort((a,b)=>b.slope-a.slope);
+      const top=per[0];
+      extra=" Steepest rise: <b>"+esc(shortName(top.f))+", "+stateAbbr(top.f.slice(0,2))+"</b> ("+
+        (top.slope>=0?"+":"")+(Math.abs(top.slope)>=10?Math.round(top.slope):top.slope.toFixed(1))+"/"+S.unit+").";
+    }
+    const scopeTxt=scopeLabel();
+    const verb = dir==="rise"?"rose":dir==="fall"?"fell":"held roughly steady";
+    const lead = (selCounties.size>=2)
+      ? "Across <b>"+esc(scopeTxt)+"</b>, combined <b>"+esc(t.name)+"</b> events "+verb
+      : "<b>"+t.name.replace(/\b\w/g,c=>c.toUpperCase())+"</b> events in <b>"+esc(scopeTxt)+"</b> "+verb;
+    document.getElementById("trend-cap").innerHTML=
+      lead+" over "+yrRange+" — about "+Math.round(Math.abs(fit.slope)).toLocaleString()+" "+ (Math.abs(fit.slope)===1?"event":"events")+
+      " per "+S.unit+" "+(dir==="flat"?"of change":(dir==="rise"?"increase":"decrease"))+
+      ", "+(pct>=0?"+":"")+Math.round(pct)+"% across the window. Peak "+S.unit+": <b>"+peak.label+"</b>."+extra+
+      (t.source!=="FEMA"?" Note: counts partly reflect reporting density, not hazard alone.":"");
+  }
+  function stat(v,k){return '<div class="tstat"><div class="tv">'+v+'</div><div class="tk">'+k+'</div></div>';}
+
+  function drawTrendChart(seriesList, fit, maxv, single){
+    const W=640,H=200,PADL=42,PADR=single?16:58,PADT=14,PADB=28;
+    const iw=W-PADL-PADR, ih=H-PADT-PADB, base=PADT+ih;
+    const accent=cvar("--accent"), muted=cvar("--muted"), faint=cvar("--faint"),
+          line=cvar("--line"), ink=cvar("--ink"), soft=cvar("--accent-soft"), card=cvar("--card");
+    const pts0=seriesList[0].pts, n=pts0.length;
+    const X=i=> PADL + (n<=1?iw/2:iw*i/(n-1));
+    const Y=v=> PADT + ih*(1 - Math.max(0,Math.min(v,maxv))/maxv);
+    let g="";
+    [0,maxv/2,maxv].forEach(v=>{const y=Y(v);
+      g+='<line x1="'+PADL+'" y1="'+y.toFixed(1)+'" x2="'+(W-PADR)+'" y2="'+y.toFixed(1)+'" stroke="'+line+'" stroke-width="1"/>';
+      g+='<text x="'+(PADL-6)+'" y="'+(y+3).toFixed(1)+'" text-anchor="end" font-size="10" fill="'+faint+'" font-family="ui-monospace,monospace">'+Math.round(v).toLocaleString()+'</text>';
+    });
+    const step=n>12?Math.ceil(n/12):1;
+    pts0.forEach((p,i)=>{ if(i%step===0||i===n-1)
+      g+='<text x="'+X(i).toFixed(1)+'" y="'+(base+16).toFixed(1)+'" text-anchor="middle" font-size="10" fill="'+faint+'" font-family="ui-monospace,monospace">'+esc(p.label)+'</text>';
+    });
+    if(single){
+      // BAR chart: honest per-period counts (no implied linearity between points)
+      const peakVal=Math.max(...pts0.map(p=>p.val));
+      const bw=(n<=1?iw*0.5:iw/n)*0.66;
+      pts0.forEach((p,i)=>{
+        const bx=X(i)-bw/2, by=Y(p.val), bh=base-by;
+        const isPeak=p.val===peakVal&&p.val>0;
+        g+='<rect x="'+bx.toFixed(1)+'" y="'+by.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(0,bh).toFixed(1)+
+          '" rx="2" fill="'+(isPeak?ink:accent)+'" opacity="'+(isPeak?0.92:0.82)+'"><title>'+esc(p.label)+': '+p.val.toLocaleString()+'</title></rect>';
+      });
+      // dashed linear-fit trend line over the bars
+      g+='<line x1="'+X(0).toFixed(1)+'" y1="'+Y(fit.b).toFixed(1)+'" x2="'+X(n-1).toFixed(1)+'" y2="'+Y(fit.b+fit.slope*(n-1)).toFixed(1)+'" stroke="'+muted+'" stroke-width="1.5" stroke-dasharray="5 4"/>';
+      // value labels on bars (only if not too many)
+      if(n<=10) pts0.forEach((p,i)=>{ if(p.val>0)
+        g+='<text x="'+X(i).toFixed(1)+'" y="'+(Y(p.val)-4).toFixed(1)+'" text-anchor="middle" font-size="9.5" fill="'+ink+'" font-family="ui-monospace,monospace" font-weight="600">'+p.val.toLocaleString()+'</text>';
+      });
+    } else {
+      // comparison: one line per region
+      seriesList.forEach(s=>{
+        const col=s.color||accent;
+        const lp=s.pts.map((p,i)=>X(i).toFixed(1)+","+Y(p.val).toFixed(1));
+        g+='<path d="M'+lp.join("L")+'" fill="none" stroke="'+col+'" stroke-width="1.9" stroke-linejoin="round"/>';
+        s.pts.forEach((p,i)=>{
+          g+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(p.val).toFixed(1)+'" r="2.3" fill="'+col+'" stroke="'+card+'" stroke-width="1.3"><title>'+(s.label?esc(s.label)+' — ':'')+esc(p.label)+': '+p.val.toLocaleString()+'</title></circle>';
+        });
+      });
+      // de-collide the end labels so lines ending at similar values stay legible
+      const labs=seriesList.map(s=>({y:Y(s.pts[n-1].val), col:s.color||accent, label:s.label, val:s.pts[n-1].val})).sort((a,b)=>a.y-b.y);
+      const gap=11;
+      for(let i=1;i<labs.length;i++) if(labs[i].y-labs[i-1].y<gap) labs[i].y=labs[i-1].y+gap;
+      const over=labs.length?labs[labs.length-1].y-(H-4):0;
+      if(over>0) labs.forEach(l=>l.y-=over);
+      const lx=X(n-1)+5;
+      labs.forEach(l=>{
+        g+='<line x1="'+X(n-1).toFixed(1)+'" y1="'+Y(l.val).toFixed(1)+'" x2="'+(lx-1).toFixed(1)+'" y2="'+(l.y).toFixed(1)+'" stroke="'+l.col+'" stroke-width="0.7" opacity="0.5"/>';
+        g+='<text x="'+lx.toFixed(1)+'" y="'+(l.y+3).toFixed(1)+'" text-anchor="start" font-size="9.5" fill="'+l.col+'" font-weight="600">'+esc(l.label)+'</text>';
+      });
+    }
+    document.getElementById("trend-chart").innerHTML=g;
+  }
+
+  // ---- hierarchical State -> County selector ----
+  const STATE_NAME={"01":"Alabama","02":"Alaska","04":"Arizona","05":"Arkansas","06":"California","08":"Colorado","09":"Connecticut","10":"Delaware","11":"District of Columbia","12":"Florida","13":"Georgia","15":"Hawaii","16":"Idaho","17":"Illinois","18":"Indiana","19":"Iowa","20":"Kansas","21":"Kentucky","22":"Louisiana","23":"Maine","24":"Maryland","25":"Massachusetts","26":"Michigan","27":"Minnesota","28":"Mississippi","29":"Missouri","30":"Montana","31":"Nebraska","32":"Nevada","33":"New Hampshire","34":"New Jersey","35":"New Mexico","36":"New York","37":"North Carolina","38":"North Dakota","39":"Ohio","40":"Oklahoma","41":"Oregon","42":"Pennsylvania","44":"Rhode Island","45":"South Carolina","46":"South Dakota","47":"Tennessee","48":"Texas","49":"Utah","50":"Vermont","51":"Virginia","53":"Washington","54":"West Virginia","55":"Wisconsin","56":"Wyoming"};
+  const stateSel=document.getElementById("state-sel"), countySel=document.getElementById("county-sel");
+  const fipsInState={};
+  (function buildStateSelect(){
+    const present={};
+    for(const f in pathByFips){ (fipsInState[f.slice(0,2)]=fipsInState[f.slice(0,2)]||[]).push(f); present[f.slice(0,2)]=1; }
+    Object.keys(present).map(sf=>({sf,n:STATE_NAME[sf]||stateAbbr(sf)})).sort((a,b)=>a.n.localeCompare(b.n))
+      .forEach(o=>{const op=document.createElement("option");op.value=o.sf;op.textContent=o.n;stateSel.appendChild(op);});
+  })();
+  stateSel.addEventListener("change",()=>{
+    const sf=stateSel.value;
+    countySel.innerHTML='<option value="">County…</option>';
+    if(!sf){countySel.disabled=true;return;}
+    (fipsInState[sf]||[]).map(f=>({f,n:nameByFips[f]||f})).sort((a,b)=>a.n.localeCompare(b.n))
+      .forEach(c=>{const op=document.createElement("option");op.value=c.f;op.textContent=c.n;countySel.appendChild(op);});
+    countySel.disabled=false;
+    zoomTo(fipsInState[sf]||[]);
+  });
+  countySel.addEventListener("change",()=>{const f=countySel.value; if(f){addCounty(f); zoomTo([...neighborhood(f)]);}});
+
+  // ---- region marquee (drag a box to select counties) ----
+  const marqueeBtn=document.getElementById("marquee-btn"), marqueeEl=document.getElementById("marquee"), mapWrap=document.getElementById("mapwrap");
+  let dragStart=null;
+  marqueeBtn.addEventListener("click",()=>{picking=!picking;marqueeBtn.setAttribute("aria-pressed",String(picking));mapWrap.classList.toggle("picking",picking);});
+  function clientToSvg(cx,cy){const pt=svg.createSVGPoint();pt.x=cx;pt.y=cy;const m=svg.getScreenCTM();if(!m)return[cx,cy];const p=pt.matrixTransform(m.inverse());return[p.x,p.y];}
+  svg.addEventListener("mousedown",e=>{
+    if(!picking)return; e.preventDefault();
+    const r=mapWrap.getBoundingClientRect();
+    dragStart=[e.clientX,e.clientY,e.clientX-r.left,e.clientY-r.top];
+    marqueeEl.hidden=false; marqueeEl.style.left=dragStart[2]+"px"; marqueeEl.style.top=dragStart[3]+"px"; marqueeEl.style.width="0px"; marqueeEl.style.height="0px";
+  });
+  window.addEventListener("mousemove",e=>{
+    if(!picking||!dragStart)return;
+    const r=mapWrap.getBoundingClientRect(), x0=dragStart[2],y0=dragStart[3],x1=e.clientX-r.left,y1=e.clientY-r.top;
+    marqueeEl.style.left=Math.min(x0,x1)+"px"; marqueeEl.style.top=Math.min(y0,y1)+"px";
+    marqueeEl.style.width=Math.abs(x1-x0)+"px"; marqueeEl.style.height=Math.abs(y1-y0)+"px";
+  });
+  window.addEventListener("mouseup",e=>{
+    if(!picking||!dragStart)return;
+    const [sx,sy]=clientToSvg(dragStart[0],dragStart[1]), [ex,ey]=clientToSvg(e.clientX,e.clientY);
+    dragStart=null; marqueeEl.hidden=true;
+    picking=false; marqueeBtn.setAttribute("aria-pressed","false"); mapWrap.classList.remove("picking");
+    suppressClick=true;                                // swallow the click that follows mouseup
+    if(Math.abs(ex-sx)<3&&Math.abs(ey-sy)<3)return;   // negligible drag = no selection
+    const xmin=Math.min(sx,ex),xmax=Math.max(sx,ex),ymin=Math.min(sy,ey),ymax=Math.max(sy,ey);
+    let added=0;
+    for(const f in bboxByFips){const b=bboxByFips[f], cx=(b[0]+b[2])/2, cy=(b[1]+b[3])/2;
+      if(cx>=xmin&&cx<=xmax&&cy>=ymin&&cy<=ymax&&!selCounties.has(f)){selCounties.add(f);added++;}}
+    if(added){ recolorSelection(); updateHighlights(); render(); renderTrend(); }
+  });
+
+  // ---- top-N hazard "risk profile" for the current region ----
+  function typeSlope(typeId, scopeSet){
+    const recs=DATA.events[typeId]||[], hasScope=scopeSet&&scopeSet.size>0, yrs=winYears();
+    if(yrs.length<2) return 0;
+    const map={}; yrs.forEach(y=>map[y]=0);
+    for(let i=0;i<recs.length;i+=3){const mi=recs[i+1]; if(mi<winStart||mi>winEnd)continue; if(hasScope&&!scopeSet.has(FIPSL[recs[i]]))continue; map[monthYear[mi]]+=recs[i+2];}
+    return linfit(yrs.map(y=>({val:map[y]}))).slope;
+  }
+  function renderRisk(){
+    const scope = selCounties.size?unionNeighborhoods():null, hasScope=!!scope;
+    const totals=[];
+    DATA.types.forEach(t=>{
+      const recs=DATA.events[t.id]||[]; let v=0;
+      for(let i=0;i<recs.length;i+=3){const mi=recs[i+1]; if(mi<winStart||mi>winEnd)continue; if(hasScope&&!scope.has(FIPSL[recs[i]]))continue; v+=recs[i+2];}
+      if(v>0) totals.push({id:t.id,name:t.name,source:t.source,val:v});
+    });
+    totals.sort((a,b)=>b.val-a.val);
+    const list=totals.slice(0,8);
+    document.getElementById("risk-title").textContent="Top hazards · "+(selCounties.size?scopeLabel():"nationwide");
+    const el=document.getElementById("risklist"); el.innerHTML="";
+    if(!list.length){el.innerHTML='<div class="riskrow" style="color:var(--faint)">No events in this window.</div>';return;}
+    list.forEach((t,i)=>{
+      const sl=typeSlope(t.id,scope), acls=Math.abs(sl)<0.5?"flat":(sl>0?"rise":"fall"), arw=acls==="flat"?"–":(sl>0?"▲":"▼");
+      const row=document.createElement("div"); row.className="riskrow"+(t.id===curType?" active":""); row.dataset.id=t.id;
+      row.innerHTML='<span class="rk">'+(i+1)+'</span><span class="rsrc" style="background:'+cvar(SRC_VAR[t.source])+'"></span>'+
+        '<span class="rnm">'+t.name+'</span><span class="rtr '+acls+'">'+arw+'</span><span class="rv">'+t.val.toLocaleString()+'</span>';
+      el.appendChild(row);
+    });
+  }
+  document.getElementById("risklist").addEventListener("click",e=>{const r=e.target.closest(".riskrow[data-id]"); if(r)selectType(r.dataset.id);});
+
+  // ---- about modal ----
+  const aboutModal=document.getElementById("about-modal");
+  document.getElementById("about-btn").addEventListener("click",()=>{aboutModal.hidden=false;});
+  document.getElementById("about-close").addEventListener("click",()=>{aboutModal.hidden=true;});
+  aboutModal.addEventListener("click",e=>{if(e.target===aboutModal)aboutModal.hidden=true;});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape")aboutModal.hidden=true;});
+
+  // ---- theme reactivity ----
+  const mq=window.matchMedia("(prefers-color-scheme:dark)");
+  function onTheme(){buildTypeList();buildLegend();updateHighlights();for(const f in pathByFips)pathByFips[f].lastFill=null;render();renderTrend();}
+  mq.addEventListener&&mq.addEventListener("change",onTheme);
+  new MutationObserver(onTheme).observe(root,{attributes:true,attributeFilter:["data-theme"]});
+
+  // ---- init ----
+  document.getElementById("src-tag").textContent=DATA.years[0]+"–"+DATA.years[1]+" · NOAA · NRC · FEMA";
+  buildTypeList(); buildYearLab(); updateFill(); computeBreaks(); buildLegend(); render(); renderTrend();
+})();
+</script>

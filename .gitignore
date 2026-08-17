@@ -1,0 +1,5 @@
+pipeline/data/
+.cache/
+**/__pycache__/
+*.pyc
+pipeline/analytics/viz_data.json

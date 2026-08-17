@@ -1,0 +1,55 @@
+name: Refresh atlas data
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"        # 06:00 UTC on the 1st of each month
+  workflow_dispatch:           # manual "Run workflow" button
+    inputs:
+      start_year:
+        description: "First year to harvest"
+        default: "2000"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: atlas-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Build atlas (harvest -> rebuild index.html)
+        env:
+          ATLAS_TEMPLATE: atlas_template.html
+          ATLAS_INDEX_OUT: index.html
+          ATLAS_START_YEAR: ${{ github.event.inputs.start_year || '2000' }}
+          ATLAS_CACHE: .cache
+          ATLAS_VIZ_OUT: .cache/viz_data.json
+          PYTHONUNBUFFERED: "1"
+        run: python pipeline/analytics/build_multi.py
+
+      - name: Commit if index.html changed
+        run: |
+          git config user.name "atlas-bot"
+          git config user.email "atlas-bot@users.noreply.github.com"
+          if [ -n "$(git status --porcelain index.html)" ]; then
+            git add index.html
+            git commit -m "Auto-refresh atlas data ($(date -u +%Y-%m-%d))"
+            git push
+            echo "Pushed refreshed index.html"
+          else
+            echo "No change in index.html"
+          fi
