@@ -6,6 +6,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
+import time
 import requests
 from openpyxl import load_workbook
 
@@ -149,17 +150,27 @@ def download_nrc_year_excel(year: int, raw_dir: Path) -> Path:
     if out_path.exists() and out_path.stat().st_size > 0:
         return out_path
 
-    resp = requests.get(url, timeout=120)
-    resp.raise_for_status()
-    out_path.write_bytes(resp.content)
-
-    head = out_path.read_bytes()[:4]
-    if head != b"PK\x03\x04":
-        raise RuntimeError(
-            f"Downloaded file is not a real .xlsx (expected ZIP header 'PK..'). "
-            f"First 4 bytes: {head!r}. You may have downloaded an HTML error page."
-        )
-    return out_path
+    # The USCG server intermittently refuses or throttles bulk pulls (the 2026-09
+    # CI refresh lost most years this way), so retry with backoff before giving up.
+    last_err: Optional[Exception] = None
+    for attempt in range(5):
+        if attempt:
+            time.sleep(15 * 2 ** (attempt - 1))
+        try:
+            resp = requests.get(url, timeout=180, headers={"User-Agent": "event-harvester/1.0 (research)"})
+            resp.raise_for_status()
+            head = resp.content[:4]
+            if head != b"PK\x03\x04":
+                raise RuntimeError(
+                    f"Downloaded file is not a real .xlsx (expected ZIP header 'PK..'). "
+                    f"First 4 bytes: {head!r}. You may have downloaded an HTML error page."
+                )
+            out_path.write_bytes(resp.content)
+            return out_path
+        except Exception as e:
+            last_err = e
+            print(f"  [NRC {year}] download attempt {attempt + 1} failed: {repr(e)[:100]}")
+    raise RuntimeError(f"NRC {year}: download failed after retries") from last_err
 
 
 # ---------- excel parsing ----------

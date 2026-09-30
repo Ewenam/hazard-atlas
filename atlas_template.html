@@ -9,6 +9,8 @@
     --noaa:#2a78d6; --nrc:#eb6834; --fema:#4a3aa7;
     --ramp0:#cde2fb; --ramp1:#9ec5f4; --ramp2:#6da7ec; --ramp3:#3987e5;
     --ramp4:#256abf; --ramp5:#184f95; --ramp6:#0d366b;
+    --bv10:#e4acac; --bv20:#c85a5a; --bv01:#b0d5df; --bv02:#64acbe;
+    --bv11:#ad9ea5; --bv21:#985356; --bv12:#627f8c; --bv22:#574249;
     --shadow:0 1px 2px rgba(20,30,45,.06),0 6px 20px rgba(20,30,45,.06);
     --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
     --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -23,6 +25,8 @@
       --noaa:#4b9bff; --nrc:#f0824f; --fema:#9085e9;
       --ramp0:#173250; --ramp1:#1d4b7d; --ramp2:#2568ab; --ramp3:#3987e5;
       --ramp4:#66a6ef; --ramp5:#98c5f5; --ramp6:#d3e6fc;
+    --bv10:#6b3a3f; --bv20:#cf5f5c; --bv01:#2c5566; --bv02:#4fa6c0;
+    --bv11:#5d5064; --bv21:#b8697a; --bv12:#5f93aa; --bv22:#ecc8dc;
       --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
     }
   }
@@ -33,6 +37,8 @@
     --noaa:#2a78d6; --nrc:#eb6834; --fema:#4a3aa7;
     --ramp0:#cde2fb; --ramp1:#9ec5f4; --ramp2:#6da7ec; --ramp3:#3987e5;
     --ramp4:#256abf; --ramp5:#184f95; --ramp6:#0d366b;
+    --bv10:#e4acac; --bv20:#c85a5a; --bv01:#b0d5df; --bv02:#64acbe;
+    --bv11:#ad9ea5; --bv21:#985356; --bv12:#627f8c; --bv22:#574249;
   }
   :root[data-theme="dark"]{
     --bg:#0c1016; --panel:#141b24; --card:#19212c; --ink:#e9eef5; --muted:#94a2b3;
@@ -41,6 +47,8 @@
     --noaa:#4b9bff; --nrc:#f0824f; --fema:#9085e9;
     --ramp0:#173250; --ramp1:#1d4b7d; --ramp2:#2568ab; --ramp3:#3987e5;
     --ramp4:#66a6ef; --ramp5:#98c5f5; --ramp6:#d3e6fc;
+    --bv10:#6b3a3f; --bv20:#cf5f5c; --bv01:#2c5566; --bv02:#4fa6c0;
+    --bv11:#5d5064; --bv21:#b8697a; --bv12:#5f93aa; --bv22:#ecc8dc;
   }
 
   *{box-sizing:border-box}
@@ -279,6 +287,35 @@
   .modal-card ul{margin:6px 0;padding-left:18px}
   .modal-x{position:absolute;top:14px;right:16px;border:0;background:none;font-size:22px;line-height:1;color:var(--muted);cursor:pointer}
   .modal-x:hover{color:var(--ink)}
+  /* bivariate overlay */
+  .ovctl{padding:0 12px 12px;display:flex;flex-direction:column;gap:6px}
+  .ovctl select{width:100%;padding:7px 8px;border:1px solid var(--line-strong);background:var(--card);
+    color:var(--ink);border-radius:8px;font-family:inherit;font-size:12.5px;cursor:pointer}
+  .ovctl select:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .ovpreset{align-self:flex-start;border:0;background:none;color:var(--accent);font-size:11.5px;cursor:pointer;padding:0;font-family:inherit}
+  .ovpreset:hover{text-decoration:underline}
+  .legend .bvleg{display:none;align-items:center;gap:16px}
+  .legend.bv .bar,.legend.bv .ticks{display:none}
+  .legend.bv .bvleg{display:flex}
+  .bvbox{display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;gap:3px 5px;flex:0 0 auto}
+  .bvgrid{display:grid;grid-template-columns:repeat(3,17px);grid-template-rows:repeat(3,17px);gap:2px}
+  .bvgrid span{border-radius:2px}
+  .bvy{writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;color:var(--muted);text-align:center;
+    text-transform:capitalize;font-weight:600;max-height:57px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .bvx{grid-column:2;font-size:10px;color:var(--muted);text-transform:capitalize;font-weight:600;
+    max-width:57px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .bvtext{font-size:11.5px;color:var(--muted);line-height:1.5}
+  .bvtext b{color:var(--ink);font-weight:600;text-transform:capitalize}
+  .ovcols{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-top:10px}
+  @media (max-width:640px){.ovcols{grid-template-columns:1fr}}
+  .ovh{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);margin:6px 0 2px 8px;font-weight:650}
+  .ovcols .toplist{padding:0}
+  .ovcols .toprow{cursor:pointer}
+  .ovcols .toprow .cv{font-size:11px;font-weight:500;color:var(--muted)}
+  .sw{width:9px;height:9px;border-radius:2px;display:inline-block;vertical-align:middle;margin-right:3px}
+  .share-btn{border:1px solid var(--line-strong);background:var(--card);color:var(--muted);
+    border-radius:8px;padding:5px 11px;font-size:12px;font-family:inherit;cursor:pointer;font-weight:600}
+  .share-btn:hover{border-color:var(--accent);color:var(--accent)}
 </style>
 
 <div class="wrap">
@@ -286,6 +323,7 @@
     <h1>U.S. County Hazard Atlas</h1>
     <span class="sub">One hazard at a time across every U.S. county — where it concentrates, and how fast it builds.</span>
     <button class="about-btn" id="about-btn" aria-haspopup="dialog">? About &amp; help</button>
+    <button class="share-btn" id="share-btn" hidden title="Copy a link to exactly this view">Copy link</button>
     <span class="src" id="src-tag">NOAA · NRC · FEMA</span>
   </header>
 
@@ -296,6 +334,11 @@
         <button class="noaa" data-src="NOAA" aria-pressed="true"><span class="dot" style="background:var(--noaa)"></span>Weather</button>
         <button class="nrc" data-src="NRC" aria-pressed="true"><span class="dot" style="background:var(--nrc)"></span>Incidents</button>
         <button class="fema" data-src="FEMA" aria-pressed="true"><span class="dot" style="background:var(--fema)"></span>Disasters</button>
+      </div>
+      <h2>Overlay a second hazard</h2>
+      <div class="ovctl">
+        <select id="ov-sel" aria-label="Overlay a second hazard"><option value="">None: one hazard at a time</option></select>
+        <button class="ovpreset" id="ov-preset" hidden>Try drought × wildfire →</button>
       </div>
       <h2>Hazard type <span id="type-count"></span></h2>
       <div class="types" id="types"></div>
@@ -335,7 +378,23 @@
       <div class="legend">
         <div class="bar" id="legbar"></div>
         <div class="ticks" id="legticks"></div>
+        <div class="bvleg">
+          <div class="bvbox"><div class="bvy" id="bv-ylab"></div><div class="bvgrid" id="bvgrid"></div><div class="bvx" id="bv-xlab"></div></div>
+          <div class="bvtext" id="bvtext"></div>
+        </div>
         <div class="cap" id="legcap">Events per county within the selected time window</div>
+      </div>
+    </section>
+
+    <section class="panel" id="ovcard" hidden>
+      <h2>Compound-hazard overlap <span id="ov-scope" style="font-size:11px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:500"></span></h2>
+      <div class="trend-body">
+        <div class="trend-stats" id="ov-stats"></div>
+        <div class="trend-cap" id="ov-cap"></div>
+        <div class="ovcols">
+          <div><h3 class="ovh">Top compound counties</h3><div class="toplist" id="ov-top"></div></div>
+          <div><h3 class="ovh">Where they cluster</h3><div class="toplist" id="ov-states"></div></div>
+        </div>
       </div>
     </section>
 
@@ -425,6 +484,12 @@
       <li><b>Trend views</b> — switch the chart between <b>Over time</b> (per-year/-month) and
         <b>Seasonality</b> (which months of the year the hazard clusters in). In the Top-hazards
         list, tap <b>+</b> on any hazard to overlay it on the trend and <b>compare hazards</b>.</li>
+      <li><b>Overlay two hazards</b>: choose a second hazard under <b>Overlay a second hazard</b>. The map
+        switches to a two-way color grid: each hazard is split into none / lower half / upper half of the
+        counties that recorded it, and the <b>darkest cells are high on both</b>, the compound-hazard zones.
+        The overlap panel lists those counties and the states where they cluster; click one to pin it.</li>
+      <li><b>Share a view</b>: the page address records the hazard(s), time window, and pinned counties,
+        so <b>Copy link</b> reproduces exactly what you see.</li>
     </ul>
 
     <h3>Reading the fields</h3>
@@ -492,6 +557,8 @@
   let hop=0;
   let trendView="time";            // "time" | "season"
   let cmpTypes=new Set();           // extra hazard types overlaid on the trend
+  let ovType=null;                  // second hazard for the bivariate map (null = single-hazard map)
+  let bvMed={a:1,b:1}, lastCountsB=null;
   let playing=false, timer=null;
   let breaks=[1,2,4,7,11,21], lastCounts=null;
   let vb=[0,0,DATA.viewW,DATA.viewH];
@@ -515,6 +582,7 @@
 
   // ---- adaptive legend breaks from full-period totals of current type ----
   function computeBreaks(){
+    if(ovType){ bvMed={a:medianNZ(countsFor(curType)), b:medianNZ(countsFor(ovType))}; }
     const recs=DATA.events[curType]||[];
     const tot=Object.create(null);
     for(let i=0;i<recs.length;i+=3){const mi=recs[i+1]; if(mi>=winStart&&mi<=winEnd){const f=FIPSL[recs[i]]; tot[f]=(tot[f]||0)+recs[i+2];}}
@@ -532,9 +600,10 @@
     return breaks.length; // = 6 -> ramp[6]
   }
 
-  function counted(){
+  function counted(){ return countsFor(curType); }
+  function countsFor(typeId){
     const counts=Object.create(null);
-    const recs=DATA.events[curType]||[];
+    const recs=DATA.events[typeId]||[];
     for(let i=0;i<recs.length;i+=3){
       const mi=recs[i+1];
       if(mi>=winStart && mi<=winEnd){ const f=FIPSL[recs[i]]; counts[f]=(counts[f]||0)+recs[i+2]; }
@@ -544,21 +613,32 @@
 
   function render(){
     const counts=counted(); lastCounts=counts;
+    const countsB=ovType?countsFor(ovType):null; lastCountsB=countsB;
     updateCountyChips(counts);
     renderRisk();
-    const R=ramp(), Z=zeroColor();
+    const R=ramp(), Z=zeroColor(), BV=ovType?bvColors():null;
     for(const fips in pathByFips){
-      const v=counts[fips]||0, b=bkt(v), fill=b<0?Z:R[b], rec=pathByFips[fips];
+      const v=counts[fips]||0, rec=pathByFips[fips];
+      let fill;
+      if(BV) fill=BV[bvCls(v,bvMed.a)][bvCls(countsB[fips]||0,bvMed.b)];
+      else { const b=bkt(v); fill=b<0?Z:R[b]; }
       if(rec.lastFill!==fill){ rec.el.setAttribute("fill",fill); rec.lastFill=fill; }
     }
     let totalEv=0, affected=0;
     for(const f in counts){ totalEv+=counts[f]; affected++; }
     document.getElementById("kpi-ev").textContent=totalEv.toLocaleString();
     document.getElementById("kpi-co").textContent=affected.toLocaleString();
-    const t=typeById[curType];
-    document.getElementById("mt-type").textContent=t.name;
-    const tag=document.getElementById("mt-tag");
-    tag.textContent=t.source; tag.style.background=cvar(SRC_VAR[t.source]);
+    const t=typeById[curType], tag=document.getElementById("mt-tag");
+    if(ovType){
+      const o=typeById[ovType];
+      document.getElementById("mt-type").textContent=t.name+" × "+o.name;
+      tag.textContent=t.source===o.source?t.source:t.source+" × "+o.source; tag.style.background=cvar("--muted");
+    }else{
+      document.getElementById("mt-type").textContent=t.name;
+      tag.textContent=t.source; tag.style.background=cvar(SRC_VAR[t.source]);
+    }
+    renderOverlap(counts,countsB);
+    syncHash();
     document.getElementById("mt-date").textContent="events, "+winLabel();
     const wy=winYears();
     document.getElementById("datebig").textContent=wy.length<=1?String(wy[0]):(wy[0]+"–"+wy[wy.length-1]);
@@ -601,6 +681,8 @@
   }
   function selectType(id){
     curType=id; cmpTypes.delete(id);
+    if(id===ovType) ovType=null;
+    syncOvUI();
     [...typesEl.querySelectorAll(".type-btn")].forEach(c=>c.setAttribute("aria-pressed",c.dataset.id===id));
     computeBreaks(); buildLegend(); render(); renderTrend();
   }
@@ -674,7 +756,13 @@
       if(hotEl&&hotEl!==t)hotEl.classList.remove("hot");
       t.classList.add("hot"); hotEl=t;
       tipN.textContent=(nameByFips[f]||f).replace(/\b\w/g,c=>c.toUpperCase())+" County";
-      tipV.textContent=v.toLocaleString(); tipS.textContent=(v===1?"event":"events")+" · "+stateAbbr(f.slice(0,2));
+      if(ovType){
+        const vb=lastCountsB?(lastCountsB[f]||0):0;
+        tipV.textContent=v.toLocaleString()+" "+typeById[curType].name+" · "+vb.toLocaleString()+" "+typeById[ovType].name;
+        tipS.textContent=stateAbbr(f.slice(0,2));
+      }else{
+        tipV.textContent=v.toLocaleString(); tipS.textContent=(v===1?"event":"events")+" · "+stateAbbr(f.slice(0,2));
+      }
       const r=wrap.getBoundingClientRect();
       tip.style.left=(e.clientX-r.left)+"px"; tip.style.top=(e.clientY-r.top)+"px"; tip.style.opacity=1;
     }
@@ -689,6 +777,23 @@
     const ticks=document.getElementById("legticks"); ticks.innerHTML="";
     const labs=["0"].concat(breaks.map(v=>v.toLocaleString())).concat([breaks[breaks.length-1].toLocaleString()+"+"]);
     labs.forEach(l=>{const s=document.createElement("span");s.textContent=l;ticks.appendChild(s);});
+    document.querySelector(".legend").classList.toggle("bv",!!ovType);
+    const cap=document.getElementById("legcap");
+    if(!ovType){ cap.textContent="Events per county within the selected time window"; return; }
+    const A=typeById[curType].name, B=typeById[ovType].name, C=bvColors(), NM=["none","lower half","upper half"];
+    const g=document.getElementById("bvgrid"); g.innerHTML="";
+    for(let cb=2;cb>=0;cb--) for(let ca=0;ca<3;ca++){
+      const sp=document.createElement("span"); sp.style.background=C[ca][cb];
+      sp.title=A+": "+NM[ca]+" · "+B+": "+NM[cb]; g.appendChild(sp);
+    }
+    document.getElementById("bv-xlab").textContent=A+" →";
+    document.getElementById("bv-ylab").textContent=B+" →";
+    const sw=c=>'<span class="sw" style="background:'+c+'"></span>';
+    document.getElementById("bvtext").innerHTML=
+      sw(C[2][0])+'high <b>'+esc(A)+'</b> only &nbsp; '+sw(C[0][2])+'high <b>'+esc(B)+'</b> only &nbsp; '+
+      sw(C[2][2])+'<b>high on both</b> (compound zone)';
+    cap.textContent="“Upper half” = above the median among affected counties in this window: more than "+
+      bvMed.a.toLocaleString()+" "+A+" and "+bvMed.b.toLocaleString()+" "+B+" events. Counties with neither stay pale.";
   }
 
   const STFIPS={"01":"AL","02":"AK","04":"AZ","05":"AR","06":"CA","08":"CO","09":"CT","10":"DE","11":"DC","12":"FL","13":"GA","15":"HI","16":"ID","17":"IL","18":"IN","19":"IA","20":"KS","21":"KY","22":"LA","23":"ME","24":"MD","25":"MA","26":"MI","27":"MN","28":"MS","29":"MO","30":"MT","31":"NE","32":"NV","33":"NH","34":"NJ","35":"NM","36":"NY","37":"NC","38":"ND","39":"OH","40":"OK","41":"OR","42":"PA","44":"RI","45":"SC","46":"SD","47":"TN","48":"TX","49":"UT","50":"VT","51":"VA","53":"WA","54":"WV","55":"WI","56":"WY"};
@@ -846,7 +951,8 @@
     const t=typeById[curType];
     const scope = selCounties.size?unionNeighborhoods():null;
     const season = trendView==="season";
-    const typesMode = cmpTypes.size>0;
+    const ids=[curType]; if(ovType) ids.push(ovType); cmpTypes.forEach(id=>{ if(!ids.includes(id)) ids.push(id); });
+    const typesMode = ids.length>1;
     const S=seriesOf(scope,curType), pts=S.pts, fit=linfit(pts);
     const n=pts.length, total=pts.reduce((a,p)=>a+p.val,0);
     const avg=n?total/n:0;
@@ -858,7 +964,7 @@
     const unit = season ? "month" : S.unit;
 
     document.getElementById("trend-scope").textContent=
-      " — "+(typesMode?(cmpTypes.size+1)+" hazards":t.name)+" · "+scopeLabel()+" · "+(season?"seasonal · ":"")+yrRange;
+      " — "+(typesMode?ids.length+" hazards":t.name)+" · "+scopeLabel()+" · "+(season?"seasonal · ":"")+yrRange;
 
     const arw=dir==="rise"?"▲":dir==="fall"?"▼":"—", dcls=dir==="rise"?"rise":dir==="fall"?"fall":"flat";
     const slopeTxt=(fit.slope>=0?"+":"")+(Math.abs(fit.slope)>=10?Math.round(fit.slope):fit.slope.toFixed(1))+"/"+S.unit;
@@ -875,8 +981,10 @@
     const compareCounties = selCounties.size>=2 && !isRegion();
     let seriesList, single, showTrend=false;
     if(typesMode){
-      const ids=[curType,...cmpTypes];
-      seriesList=ids.map((id,k)=>({pts:seriesOf(scope,id).pts, color:k===0?cvar("--accent"):SELPAL[(k-1)%SELPAL.length], label:typeById[id].name.split(" ")[0]}));
+      // with an overlay, the first two lines take the map's bivariate axis colors
+      seriesList=ids.map((id,k)=>({pts:seriesOf(scope,id).pts,
+        color: ovType&&k<2 ? cvar(k===0?"--bv20":"--bv02") : (k===0?cvar("--accent"):SELPAL[(k-1)%SELPAL.length]),
+        label:typeById[id].name.split(" ")[0]}));
       single=false;
     }else if(compareCounties){
       seriesList=[...selCounties].map(f=>({pts:seriesOf(neighborhood(f),curType).pts, color:colorByFips[f], label:shortName(f).split(" ")[0]}));
@@ -891,10 +999,10 @@
     if(season){
       cap="Seasonality of <b>"+esc(t.name)+"</b> in <b>"+esc(scopeLabel())+"</b>, "+yrRange+
         " — busiest month is <b>"+peak.label+"</b> ("+Math.round(100*peak.val/(total||1))+"% of events)."+
-        (typesMode?" Comparing "+(cmpTypes.size+1)+" hazards.":"");
+        (typesMode?" Comparing "+ids.length+" hazards.":"");
     }else if(typesMode){
       const verb=dir==="rise"?"rose":dir==="fall"?"fell":"held steady";
-      cap="Comparing <b>"+(cmpTypes.size+1)+" hazards</b> in <b>"+esc(scopeLabel())+"</b> over "+yrRange+
+      cap="Comparing <b>"+ids.length+" hazards</b> in <b>"+esc(scopeLabel())+"</b> over "+yrRange+
         " (one line each). <b>"+esc(t.name)+"</b> "+verb+" ~"+(pct>=0?"+":"")+Math.round(pct)+"% across the window.";
     }else{
       let extra="";
@@ -912,6 +1020,7 @@
         ", "+(pct>=0?"+":"")+Math.round(pct)+"% across the window. Peak "+S.unit+": <b>"+peak.label+"</b>."+extra;
     }
     document.getElementById("trend-cap").innerHTML=cap+(t.source!=="FEMA"?" Note: counts partly reflect reporting density, not hazard alone.":"");
+    syncHash();
   }
   function stat(v,k){return '<div class="tstat"><div class="tv">'+v+'</div><div class="tk">'+k+'</div></div>';}
 
@@ -1049,7 +1158,7 @@
     if(!list.length){el.innerHTML='<div class="riskrow" style="color:var(--faint)">No events in this window.</div>';return;}
     list.forEach((t,i)=>{
       const sl=typeSlope(t.id,scope), acls=Math.abs(sl)<0.5?"flat":(sl>0?"rise":"fall"), arw=acls==="flat"?"–":(sl>0?"▲":"▼");
-      const isPrimary=t.id===curType, inCmp=cmpTypes.has(t.id);
+      const isPrimary=t.id===curType, inCmp=cmpTypes.has(t.id)||t.id===ovType;
       const row=document.createElement("div"); row.className="riskrow"+(isPrimary?" active":""); row.dataset.id=t.id;
       const cmpBtn = isPrimary ? '<span class="rcmp ph"></span>'
         : '<button class="rcmp'+(inCmp?" on":"")+'" data-cmp="'+t.id+'" title="'+(inCmp?"Remove from trend comparison":"Add to trend comparison")+'">'+(inCmp?"✓":"+")+'</button>';
@@ -1060,6 +1169,7 @@
   }
   document.getElementById("risklist").addEventListener("click",e=>{
     const cb=e.target.closest("button[data-cmp]");
+    if(cb&&cb.dataset.cmp===ovType){ setOverlay(null); return; }
     if(cb){ const id=cb.dataset.cmp; cmpTypes.has(id)?cmpTypes.delete(id):cmpTypes.add(id); renderRisk(); renderTrend(); return; }
     const r=e.target.closest(".riskrow[data-id]"); if(r)selectType(r.dataset.id);
   });
@@ -1077,6 +1187,135 @@
   aboutModal.addEventListener("click",e=>{if(e.target===aboutModal)aboutModal.hidden=true;});
   document.addEventListener("keydown",e=>{if(e.key==="Escape")aboutModal.hidden=true;});
 
+  // ---- bivariate overlay: two hazards on one map ----
+  // Each hazard is split into none / lower half / upper half of the counties that recorded it
+  // (median of nonzero county counts in the window); the 3x3 grid's dark corner = high on both.
+  function medianNZ(c){ const v=Object.values(c).filter(x=>x>0).sort((a,b)=>a-b); return v.length?v[(v.length-1)>>1]:1; }
+  function bvCls(v,med){ return v<=0?0:(v>med?2:1); }
+  function bvColors(){ const Z=zeroColor(), C=[[],[],[]];
+    for(let a=0;a<3;a++) for(let b=0;b<3;b++) C[a][b]=(a||b)?cvar("--bv"+a+b):Z;
+    return C; }
+  const ovSel=document.getElementById("ov-sel"), ovPreset=document.getElementById("ov-preset");
+  const PRESET=["noaa_drought","noaa_wildfire"], hasPreset=PRESET.every(id=>typeById[id]);
+  (function buildOvSelect(){
+    ["NOAA","NRC","FEMA"].forEach(src=>{
+      const og=document.createElement("optgroup"); og.label=SRC_LABEL[src];
+      DATA.types.filter(t=>t.source===src).sort((a,b)=>b.total-a.total).forEach(t=>{
+        const op=document.createElement("option"); op.value=t.id; op.textContent=t.name; og.appendChild(op); });
+      if(og.children.length) ovSel.appendChild(og);
+    });
+  })();
+  function syncOvUI(){ ovSel.value=ovType||""; ovPreset.hidden=!hasPreset||!!ovType; }
+  function setOverlay(id){
+    ovType=(id&&id!==curType&&typeById[id])?id:null;
+    if(ovType) cmpTypes.delete(ovType);
+    syncOvUI(); computeBreaks(); buildLegend(); render(); renderTrend();
+  }
+  ovSel.addEventListener("change",()=>setOverlay(ovSel.value));
+  ovPreset.addEventListener("click",()=>{
+    if(!activeSrc.NOAA){ activeSrc.NOAA=true; document.querySelector('#srcfilter [data-src="NOAA"]').setAttribute("aria-pressed","true"); buildTypeList(); }
+    selectType(PRESET[0]); setOverlay(PRESET[1]); resetView();
+  });
+
+  function renderOverlap(cA,cB){
+    const card=document.getElementById("ovcard");
+    if(!ovType){ card.hidden=true; return; }
+    card.hidden=false;
+    const A=typeById[curType].name, B=typeById[ovType].name;
+    const scope=selCounties.size?unionNeighborhoods():null;
+    const univ=(scope?[...scope]:Object.keys(pathByFips)).filter(f=>pathByFips[f]);
+    document.getElementById("ov-scope").textContent=" — "+A+" × "+B+" · "+scopeLabel()+" · "+winLabel();
+    // national percentile ranks (among affected counties) order the compound list
+    const sa=Object.values(cA).filter(v=>v>0).sort((a,b)=>a-b), sb=Object.values(cB).filter(v=>v>0).sort((a,b)=>a-b);
+    const pr=(arr,v)=>{let lo=0,hi=arr.length; while(lo<hi){const m=(lo+hi)>>1; if(arr[m]<=v)lo=m+1; else hi=m;} return arr.length?lo/arr.length:0;};
+    let nBoth=0,hiA=0,hiB=0,sx=0,sy=0,sxx=0,syy=0,sxy=0; const hh=[], n=univ.length;
+    univ.forEach(f=>{
+      const a=cA[f]||0, b=cB[f]||0, x=Math.log1p(a), y=Math.log1p(b);
+      sx+=x; sy+=y; sxx+=x*x; syy+=y*y; sxy+=x*y;
+      if(a>0&&b>0) nBoth++;
+      const ca=bvCls(a,bvMed.a), cb=bvCls(b,bvMed.b);
+      if(ca===2) hiA++; if(cb===2) hiB++;
+      if(ca===2&&cb===2) hh.push({f,a,b,s:pr(sa,a)*pr(sb,b)});
+    });
+    const den=Math.sqrt((n*sxx-sx*sx)*(n*syy-sy*sy)), r=den?(n*sxy-sx*sy)/den:0;
+    const pB=hiB?Math.round(100*hh.length/hiB):0, pA=hiA?Math.round(100*hh.length/hiA):0;
+    document.getElementById("ov-stats").innerHTML=
+      stat(hh.length.toLocaleString(),"Compound counties")+
+      stat(pB+"%","of high-"+esc(B)+" also high-"+esc(A))+
+      stat(nBoth.toLocaleString(),"Counties with both")+
+      stat(den?(r>=0?"+":"")+r.toFixed(2):"—","Correlation r (log counts)");
+    const ar=Math.abs(r), strength=ar<0.1?"essentially no":ar<0.3?"a weak":ar<0.5?"a moderate":"a strong";
+    document.getElementById("ov-cap").innerHTML=hh.length
+      ? "<b>"+hh.length.toLocaleString()+" "+(hh.length===1?"county is":"counties are")+"</b> in the upper half for both <b>"+esc(A)+
+        "</b> and <b>"+esc(B)+"</b> here: the compound-hazard zone (darkest on the map). "+pB+"% of high-"+esc(B)+
+        " counties are also high-"+esc(A)+"; "+pA+"% the other way. Across "+n.toLocaleString()+" counties, county counts show "+
+        strength+" "+(r>=0?"positive":"negative")+" association (r = "+r.toFixed(2)+"), so where the two co-occur matters more than the overall correlation. "+
+        "Co-location, not causation; counts partly reflect reporting."
+      : "No county is in the upper half for both hazards in this scope and window.";
+    const top=hh.slice().sort((x,y)=>y.s-x.s).slice(0,8), C=bvColors(), sw=c=>'<span class="sw" style="background:'+c+'"></span>';
+    const tEl=document.getElementById("ov-top"); tEl.innerHTML="";
+    if(!top.length) tEl.innerHTML='<div class="toprow" style="color:var(--faint);cursor:default">None.</div>';
+    top.forEach((o,i)=>{
+      const row=document.createElement("div"); row.className="toprow"; row.dataset.f=o.f; row.title="Zoom to this county";
+      row.innerHTML='<span class="rank">'+(i+1)+'</span><span class="cnm">'+esc((nameByFips[o.f]||o.f).toLowerCase())+
+        '</span><span class="cst">'+stateAbbr(o.f.slice(0,2))+'</span><span class="cv">'+sw(C[2][0])+o.a.toLocaleString()+' '+sw(C[0][2])+o.b.toLocaleString()+'</span>';
+      tEl.appendChild(row);
+    });
+    const byState={}; hh.forEach(o=>{(byState[o.f.slice(0,2)]=byState[o.f.slice(0,2)]||[]).push(o.f);});
+    const st=Object.keys(byState).map(k=>[k,byState[k]]).sort((x,y)=>y[1].length-x[1].length).slice(0,8);
+    const sEl=document.getElementById("ov-states"); sEl.innerHTML="";
+    if(!st.length) sEl.innerHTML='<div class="toprow" style="color:var(--faint);cursor:default">None.</div>';
+    const smax=st.length?st[0][1].length:1;
+    st.forEach(([sf,list],i)=>{
+      const row=document.createElement("div"); row.className="toprow"; row.dataset.st=sf; row.title="Zoom to this state's compound counties";
+      row.innerHTML='<span class="rank">'+(i+1)+'</span><span class="cnm">'+esc(STATE_NAME[sf]||stateAbbr(sf))+
+        '</span><span class="minibar" style="width:'+(6+34*list.length/smax)+'px;background:'+C[2][2]+'"></span><span class="cv">'+list.length+'</span>';
+      sEl.appendChild(row);
+    });
+    ovZoom=byState;
+  }
+  let ovZoom={};
+  document.getElementById("ov-top").addEventListener("click",e=>{const r=e.target.closest(".toprow[data-f]"); if(r) zoomTo([r.dataset.f]);});
+  document.getElementById("ov-states").addEventListener("click",e=>{const r=e.target.closest(".toprow[data-st]"); if(r) zoomTo(ovZoom[r.dataset.st]||[]);});
+
+  // ---- shareable view state in the URL hash ----
+  // #t=type&o=overlay&w=YYYYMM-YYYYMM&c=fips.fips&h=hop&v=s
+  let hashReady=false;
+  function ymKey(mi){const ym=DATA.monthYM[mi]; return ym[0]*100+ym[1];}
+  function miOf(key){ key=+key; const y=Math.floor(key/100), m=key%100, b=DATA.monthYM[0];
+    return Math.max(0,Math.min(DATA.nMonths-1,(y-b[0])*12+(m-b[1]))); }
+  function syncHash(){
+    if(!hashReady||playing) return;
+    try{
+      const q=new URLSearchParams(); q.set("t",curType);
+      if(ovType) q.set("o",ovType);
+      if(winStart>0||winEnd<DATA.nMonths-1) q.set("w",ymKey(winStart)+"-"+ymKey(winEnd));
+      if(selCounties.size&&selCounties.size<=60) q.set("c",[...selCounties].join("."));
+      if(hop) q.set("h",hop);
+      if(trendView==="season") q.set("v","s");
+      history.replaceState(null,"","#"+q.toString());
+    }catch(e){}
+  }
+  function readHash(){
+    try{
+      const q=new URLSearchParams(location.hash.slice(1));
+      const t=q.get("t"); if(t&&typeById[t]) curType=t;
+      const o=q.get("o"); if(o&&typeById[o]&&o!==curType) ovType=o;
+      const w=q.get("w"); if(w&&/^\d{6}-\d{6}$/.test(w)){ const [a,b]=w.split("-").map(miOf); if(a<=b){winStart=a; winEnd=b; rStart.value=a; rEnd.value=b;} }
+      const c=q.get("c"); if(c) c.split(".").forEach(f=>{ if(pathByFips[f]) selCounties.add(f); });
+      const h=+q.get("h"); if(h>=1&&h<=3){ hop=h; [...document.getElementById("hopbtns").children].forEach(b=>b.setAttribute("aria-pressed",+b.dataset.hop===hop)); }
+      if(q.get("v")==="s") setTrendView("season");
+    }catch(e){}
+  }
+  const shareBtn=document.getElementById("share-btn");
+  let framed=true; try{ framed=window.top!==window.self; }catch(e){}
+  shareBtn.hidden=framed;   // inside an embed, location.href isn't the address people see
+  shareBtn.addEventListener("click",()=>{
+    const done=()=>{shareBtn.textContent="Copied ✓"; setTimeout(()=>shareBtn.textContent="Copy link",1600);};
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(location.href).then(done,()=>window.prompt("Copy this link:",location.href));
+    else window.prompt("Copy this link:",location.href);
+  });
+
   // ---- theme reactivity ----
   const mq=window.matchMedia("(prefers-color-scheme:dark)");
   function onTheme(){buildTypeList();buildLegend();updateHighlights();for(const f in pathByFips)pathByFips[f].lastFill=null;render();renderTrend();}
@@ -1085,6 +1324,9 @@
 
   // ---- init ----
   document.getElementById("src-tag").textContent=DATA.years[0]+"–"+DATA.years[1]+" · NOAA · NRC · FEMA";
+  readHash(); syncOvUI(); recolorSelection(); updateHighlights();
   buildTypeList(); buildYearLab(); updateFill(); computeBreaks(); buildLegend(); render(); renderTrend();
+  if(selCounties.size) zoomTo([...unionNeighborhoods()]);
+  hashReady=true; syncHash();
 })();
 </script>

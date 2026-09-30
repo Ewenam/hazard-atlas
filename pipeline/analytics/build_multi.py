@@ -300,6 +300,50 @@ def build_paths(gj, geo_fips):
     return out, W, H
 
 
+def source_year_totals(data):
+    """{source: {year: events}} from a v3 viz payload."""
+    out = collections.defaultdict(lambda: collections.defaultdict(int))
+    ym = data["monthYM"]
+    for t in data["types"]:
+        recs = data["events"].get(t["id"], [])
+        for i in range(0, len(recs), 3):
+            out[t["source"]][ym[recs[i + 1]][0]] += recs[i + 2]
+    return out
+
+
+def check_regression(new, prev_index: Path, tolerance=0.9):
+    """Refuse to publish a build with holes in it.
+
+    Every harvest step catches its own errors so one bad year can't kill the run,
+    but that also means a flaky download silently becomes zero counts. The 2026-09
+    refresh shipped with ~87% of NRC missing that way. Abort (non-zero exit, so CI
+    commits nothing) if any completed year failed, or if any source's completed-year
+    total shrank versus the currently published page.
+    """
+    this_year = date.today().year
+    problems = [k for k in diag if (k.endswith(tuple(f"_year_fail_{y}" for y in YEARS if y < this_year))
+                                    or k == "fema_fail")]
+    if not prev_index.exists():
+        if problems:
+            raise SystemExit(f"ABORT: harvest failures {problems}; not writing {prev_index}")
+        return
+    m = re.search(r'<script id="viz-data" type="application/json">(.*?)</script>', prev_index.read_text(), re.S)
+    if m and m.group(1).strip() != "/*__DATA__*/":
+        old_tot, new_tot = source_year_totals(json.loads(m.group(1))), source_year_totals(new)
+        for src in old_tot:
+            for y, v in sorted(old_tot[src].items()):
+                if y >= this_year or v < 100:
+                    continue
+                if new_tot[src].get(y, 0) < tolerance * v:
+                    problems.append(f"{src} {y}: {new_tot[src].get(y, 0)} < {tolerance:.0%} of published {v}")
+    if problems:
+        print("\n--- regression check FAILED ---")
+        for p in problems:
+            print(f"  {p}")
+        raise SystemExit(f"ABORT: build would drop data; {prev_index} left unchanged")
+    print("regression check passed (no completed-year source totals dropped)")
+
+
 def main():
     ensure_reference()
     print("loading reference data ...")
@@ -323,6 +367,7 @@ def main():
         harvest_fema(geo_fips)
         print(f"  FEMA {YEARS[0]}-{YEARS[-1]} done ({time.time()-t:.1f}s)")
     except Exception as e:
+        diag["fema_fail"] += 1
         print(f"  [FEMA] SKIP: {repr(e)[:120]}")
 
     print("projecting counties ...")
@@ -367,6 +412,7 @@ def main():
     print(f"wrote {OUT}  ({len(data_str)/1e6:.2f} MB)")
 
     if TEMPLATE and INDEX_OUT:
+        check_regression(out, Path(INDEX_OUT))
         tpl = Path(TEMPLATE).read_text()
         if "/*__DATA__*/" not in tpl:
             raise SystemExit("template missing /*__DATA__*/ marker")
